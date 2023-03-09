@@ -120,9 +120,9 @@ public class ValidationError {
     @Override
     public String toString() {
         StringBuilder strb = new StringBuilder();
-        strb.append("[Validation set: '").append(validatorSetName).append("' | Problem: '").append(problem).append("'] : ");
+        strb.append("[验证类型: '").append(validatorSetName).append("' | 问题: '").append(problem).append("'] : ");
         strb.append(defaultDescription);
-        strb.append(" - [Extra info : ");
+        strb.append(" - [其他信息 : ");
         boolean extraInfoAlreadyPresent = false;
         if (processDefinitionId != null) {
             strb.append("processDefinitionId = ").append(processDefinitionId);
@@ -151,7 +151,7 @@ public class ValidationError {
         }
         strb.append("]");
         if (xmlLineNumber > 0 && xmlColumnNumber > 0) {
-            strb.append(" ( line: ").append(xmlLineNumber).append(", column: ").append(xmlColumnNumber).append(")");
+            strb.append(" ( 行: ").append(xmlLineNumber).append(", 列: ").append(xmlColumnNumber).append(")");
         }
         return strb.toString();
     }

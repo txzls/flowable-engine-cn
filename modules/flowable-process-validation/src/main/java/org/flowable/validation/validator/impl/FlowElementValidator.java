@@ -53,7 +53,7 @@ public class FlowElementValidator extends ProcessLevelValidator {
     protected void handleConstraints(Process process, Activity activity, List<ValidationError> errors) {
         if (activity.getId() != null && activity.getId().length() > ID_MAX_LENGTH) {
             addError(errors, Problems.FLOW_ELEMENT_ID_TOO_LONG, process, activity,
-                    "The id of a flow element must not contain more than " + ID_MAX_LENGTH + " characters");
+                    "流程元素的id不能超过 " + ID_MAX_LENGTH + " 个字符");
         }
     }
 
@@ -65,7 +65,7 @@ public class FlowElementValidator extends ProcessLevelValidator {
                     && StringUtils.isEmpty(multiInstanceLoopCharacteristics.getInputDataItem()) && StringUtils.isEmpty(multiInstanceLoopCharacteristics.getCollectionString())) {
 
                 addError(errors, Problems.MULTI_INSTANCE_MISSING_COLLECTION, process, activity, multiInstanceLoopCharacteristics,
-                        "Either loopCardinality or loopDataInputRef/flowable:collection must been set");
+                        "必须设置loopCardinality或loopDataInputRef/flowable:collection中的一个");
             }
             
             if (!StringUtils.isEmpty(multiInstanceLoopCharacteristics.getCollectionString())) {
@@ -73,7 +73,7 @@ public class FlowElementValidator extends ProcessLevelValidator {
             	if (multiInstanceLoopCharacteristics.getHandler() == null) {
             		// verify string parsing function attributes
             		addError(errors, Problems.MULTI_INSTANCE_MISSING_COLLECTION_FUNCTION_PARAMETERS, process, activity,
-            				"The flowable:collection element string value requires the function parameters flowable:delegateExpression or flowable:class.");
+                            "flowable:collection元素字符串值需要函数参数flowable:delegateExpression或flowable:class。");
             	}
             }
 
@@ -85,7 +85,7 @@ public class FlowElementValidator extends ProcessLevelValidator {
             for (DataAssociation dataAssociation : activity.getDataInputAssociations()) {
                 if (StringUtils.isEmpty(dataAssociation.getTargetRef())) {
                     addError(errors, Problems.DATA_ASSOCIATION_MISSING_TARGETREF, process, activity, dataAssociation,
-                            "Targetref is required on a data association");
+                            "在数据关联上需要“Targetref属性");
                 }
             }
         }
@@ -93,7 +93,7 @@ public class FlowElementValidator extends ProcessLevelValidator {
             for (DataAssociation dataAssociation : activity.getDataOutputAssociations()) {
                 if (StringUtils.isEmpty(dataAssociation.getTargetRef())) {
                     addError(errors, Problems.DATA_ASSOCIATION_MISSING_TARGETREF, process, activity,
-                            "Targetref is required on a data association");
+                            "在数据关联上需要“Targetref属性");
                 }
             }
         }

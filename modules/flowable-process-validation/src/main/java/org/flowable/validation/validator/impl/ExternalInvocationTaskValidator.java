@@ -56,10 +56,10 @@ public abstract class ExternalInvocationTaskValidator extends ProcessLevelValida
         }
 
         if (!recipientDefined) {
-            addError(errors, Problems.MAIL_TASK_NO_RECIPIENT, process, task, "No recipient is defined on the mail activity");
+            addError(errors, Problems.MAIL_TASK_NO_RECIPIENT, process, task, "邮件任务上没有定义收件人");
         }
         if (!textOrHtmlDefined) {
-            addError(errors, Problems.MAIL_TASK_NO_CONTENT, process, task, "Text, html, textVar or htmlVar field should be provided");
+            addError(errors, Problems.MAIL_TASK_NO_CONTENT, process, task, "需要提供Text, html, textVar或htmlVar字段");
         }
     }
 
@@ -75,13 +75,13 @@ public abstract class ExternalInvocationTaskValidator extends ProcessLevelValida
             }
 
             if (("wait".equals(fieldName) || "redirectError".equals(fieldName) || "cleanEnv".equals(fieldName)) && !"true".equals(fieldValue.toLowerCase()) && !"false".equals(fieldValue.toLowerCase())) {
-                addError(errors, Problems.SHELL_TASK_INVALID_PARAM, process, task, fieldExtension, "Undefined parameter value for shell field");
+                addError(errors, Problems.SHELL_TASK_INVALID_PARAM, process, task, fieldExtension, "shell字段未定义参数值");
             }
 
         }
 
         if (!shellCommandDefined) {
-            addError(errors, Problems.SHELL_TASK_NO_COMMAND, process, task, "No shell command is defined on the shell activity");
+            addError(errors, Problems.SHELL_TASK_NO_COMMAND, process, task, "在shell任务上没有定义shell命令");
         }
     }
 
@@ -103,7 +103,7 @@ public abstract class ExternalInvocationTaskValidator extends ProcessLevelValida
         }
 
         if (!keyDefined) {
-            addError(errors, Problems.DMN_TASK_NO_KEY, process, task, "No decision table or decision service reference key is defined on the dmn activity");
+            addError(errors, Problems.DMN_TASK_NO_KEY, process, task, "dmn任务上没有定义决策表或决策服务引用键");
         }
     }
 
@@ -127,37 +127,37 @@ public abstract class ExternalInvocationTaskValidator extends ProcessLevelValida
         }
 
         if (!requestMethodDefined) {
-            addError(errors, Problems.HTTP_TASK_NO_REQUEST_METHOD, process, task, "No request method is defined on the http activity");
+            addError(errors, Problems.HTTP_TASK_NO_REQUEST_METHOD, process, task, "http任务上没有定义请求方法");
         }
 
         if (!requestUrlDefined) {
-            addError(errors, Problems.HTTP_TASK_NO_REQUEST_URL, process, task, "No request url is defined on the http activity");
+            addError(errors, Problems.HTTP_TASK_NO_REQUEST_URL, process, task, "http任务上没有定义请求url");
         }
 
     }
     
     protected void validateFieldDeclarationsForCase(org.flowable.bpmn.model.Process process, CaseServiceTask caseServiceTask, List<ValidationError> errors) {
         if (StringUtils.isEmpty(caseServiceTask.getCaseDefinitionKey())) {
-            addError(errors, Problems.CASE_TASK_NO_CASE_DEFINITION_KEY, process, caseServiceTask, "No case definition key is defined on the case task");
+            addError(errors, Problems.CASE_TASK_NO_CASE_DEFINITION_KEY, process, caseServiceTask, "在案例任务上没有定义case定义键");
         }
     }
     
     protected void validateFieldDeclarationsForSendEventTask(org.flowable.bpmn.model.Process process, SendEventServiceTask sendEventServiceTask, List<ValidationError> errors) {
         if (StringUtils.isEmpty(sendEventServiceTask.getEventType())) {
-            addError(errors, Problems.SEND_EVENT_TASK_NO_EVENT_TYPE, process, sendEventServiceTask, "No event type is defined on the send event task");
+            addError(errors, Problems.SEND_EVENT_TASK_NO_EVENT_TYPE, process, sendEventServiceTask, "发送事件任务上没有定义事件类型");
         }
         List<ExtensionElement> channelKeyExtensionElements = sendEventServiceTask.getExtensionElements().get("channelKey");
         if (channelKeyExtensionElements == null || channelKeyExtensionElements.isEmpty() || StringUtils.isEmpty(channelKeyExtensionElements.get(0).getElementText())) {
             List<ExtensionElement> systemChannelElements = sendEventServiceTask.getExtensionElements().get("systemChannel");
             if (systemChannelElements == null || systemChannelElements.isEmpty()) {
-                addError(errors, Problems.SEND_EVENT_TASK_NO_OUTBOUND_CHANNEL, process, sendEventServiceTask, "No outbound channel set on the send event task");
+                addError(errors, Problems.SEND_EVENT_TASK_NO_OUTBOUND_CHANNEL, process, sendEventServiceTask, "发送事件任务上没有设置输出通道");
             }
         }
     }
 
     protected void validateExternalWorkerTask(org.flowable.bpmn.model.Process process, ExternalWorkerServiceTask externalWorkerServiceTask, List<ValidationError> errors) {
         if (StringUtils.isEmpty(externalWorkerServiceTask.getTopic())) {
-            addError(errors, Problems.EXTERNAL_WORKER_TASK_NO_TOPIC, process, externalWorkerServiceTask, "No topic is defined on the external worker task");
+            addError(errors, Problems.EXTERNAL_WORKER_TASK_NO_TOPIC, process, externalWorkerServiceTask, "在外部任务上没有定义主题");
         }
     }
 }

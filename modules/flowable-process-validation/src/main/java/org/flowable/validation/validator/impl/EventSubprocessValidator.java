@@ -54,14 +54,14 @@ public class EventSubprocessValidator extends ProcessLevelValidator {
                             !(eventDefinition instanceof VariableListenerEventDefinition)) {
 
                         addError(errors, Problems.EVENT_SUBPROCESS_INVALID_START_EVENT_DEFINITION, process, eventSubprocess, eventDefinition,
-                                "start event of event subprocess must be of type 'error', 'timer', 'message' or 'signal'");
+                                "事件子进程的启动事件类型必须为“error“， “timer“， “message“或“signal“");
                     }
                 }
             }
 
             List<BoundaryEvent> boundaryEvents = eventSubprocess.getBoundaryEvents();
             if (boundaryEvents != null && !boundaryEvents.isEmpty()) {
-                addWarning(errors, Problems.EVENT_SUBPROCESS_BOUNDARY_EVENT, process, eventSubprocess, "event sub process cannot have attached boundary events");
+                addWarning(errors, Problems.EVENT_SUBPROCESS_BOUNDARY_EVENT, process, eventSubprocess, "事件子流程不能附加边界事件");
             }
 
         }

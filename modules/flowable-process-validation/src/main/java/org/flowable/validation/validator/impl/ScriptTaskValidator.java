@@ -32,7 +32,7 @@ public class ScriptTaskValidator extends ProcessLevelValidator {
         List<ScriptTask> scriptTasks = process.findFlowElementsOfType(ScriptTask.class);
         for (ScriptTask scriptTask : scriptTasks) {
             if (StringUtils.isEmpty(scriptTask.getScript())) {
-                addError(errors, Problems.SCRIPT_TASK_MISSING_SCRIPT, process, scriptTask, "No script provided for script task");
+                addError(errors, Problems.SCRIPT_TASK_MISSING_SCRIPT, process, scriptTask, "脚本任务没有提供脚本");
             }
         }
     }

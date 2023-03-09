@@ -34,19 +34,19 @@ public class SignalValidator extends ValidatorImpl {
 
             for (Signal signal : signals) {
                 if (StringUtils.isEmpty(signal.getId())) {
-                    addError(errors, Problems.SIGNAL_MISSING_ID, signal, "Signal must have an id");
+                    addError(errors, Problems.SIGNAL_MISSING_ID, signal, "信号必须有一个id");
                 }
 
                 if (StringUtils.isEmpty(signal.getName())) {
-                    addError(errors, Problems.SIGNAL_MISSING_NAME, signal, "Signal must have a name");
+                    addError(errors, Problems.SIGNAL_MISSING_NAME, signal, "信号必须有一个名称");
                 }
 
                 if (!StringUtils.isEmpty(signal.getName()) && duplicateName(signals, signal.getId(), signal.getName())) {
-                    addError(errors, Problems.SIGNAL_DUPLICATE_NAME, signal, "Duplicate signal name found");
+                    addError(errors, Problems.SIGNAL_DUPLICATE_NAME, signal, "发现重复的信号名称");
                 }
 
                 if (signal.getScope() != null && !signal.getScope().equals(Signal.SCOPE_GLOBAL) && !signal.getScope().equals(Signal.SCOPE_PROCESS_INSTANCE)) {
-                    addError(errors, Problems.SIGNAL_INVALID_SCOPE, signal, "Invalid value for 'scope'. Only values 'global' and 'processInstance' are supported");
+                    addError(errors, Problems.SIGNAL_INVALID_SCOPE, signal, "“scope“的值无效。只支持“global”和“processInstance”值");
                 }
             }
 

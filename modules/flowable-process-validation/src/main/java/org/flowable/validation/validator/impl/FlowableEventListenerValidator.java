@@ -35,11 +35,11 @@ public class FlowableEventListenerValidator extends ProcessLevelValidator {
 
                 if (eventListener.getImplementationType() != null && eventListener.getImplementationType().equals(ImplementationType.IMPLEMENTATION_TYPE_INVALID_THROW_EVENT)) {
 
-                    addError(errors, Problems.EVENT_LISTENER_INVALID_THROW_EVENT_TYPE, process, eventListener, "Invalid or unsupported throw event type on event listener");
+                    addError(errors, Problems.EVENT_LISTENER_INVALID_THROW_EVENT_TYPE, process, eventListener, "事件监听器上的抛出事件类型无效或不支持");
 
                 } else if (eventListener.getImplementationType() == null || eventListener.getImplementationType().length() == 0) {
 
-                    addError(errors, Problems.EVENT_LISTENER_IMPLEMENTATION_MISSING, process, eventListener, "Element 'class', 'delegateExpression' or 'throwEvent' is mandatory on eventListener");
+                    addError(errors, Problems.EVENT_LISTENER_IMPLEMENTATION_MISSING, process, eventListener, "元素“class“， “delegateExpression“或“throwEvent“在eventListener上是必需的");
 
                 } else if (eventListener.getImplementationType() != null) {
 
@@ -49,7 +49,7 @@ public class FlowableEventListenerValidator extends ProcessLevelValidator {
                             && !ImplementationType.IMPLEMENTATION_TYPE_THROW_GLOBAL_SIGNAL_EVENT.equals(eventListener.getImplementationType())
                             && !ImplementationType.IMPLEMENTATION_TYPE_THROW_MESSAGE_EVENT.equals(eventListener.getImplementationType())
                             && !ImplementationType.IMPLEMENTATION_TYPE_THROW_ERROR_EVENT.equals(eventListener.getImplementationType())) {
-                        addError(errors, Problems.EVENT_LISTENER_INVALID_IMPLEMENTATION, process, eventListener, "Unsupported implementation type for event listener");
+                        addError(errors, Problems.EVENT_LISTENER_INVALID_IMPLEMENTATION, process, eventListener, "事件监听器不支持的实现类型");
                     }
 
                 }

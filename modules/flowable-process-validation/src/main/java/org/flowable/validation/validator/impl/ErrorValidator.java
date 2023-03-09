@@ -30,7 +30,7 @@ public class ErrorValidator extends ValidatorImpl {
             for (String errorRef : bpmnModel.getErrors().keySet()) {
                 String errorCode = bpmnModel.getErrors().get(errorRef);
                 if ("".equals(errorCode)) {
-                    addError(errors, Problems.ERROR_MISSING_ERROR_CODE, null, errorRef, "Invalid error code: empty errorCode");
+                    addError(errors, Problems.ERROR_MISSING_ERROR_CODE, null, errorRef, "无效的错误码:错误码为空");
                 }
             }
         }

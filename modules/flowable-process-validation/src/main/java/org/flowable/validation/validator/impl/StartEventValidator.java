@@ -49,7 +49,7 @@ public class StartEventValidator extends ProcessLevelValidator {
                     addError(errors, Problems.START_EVENT_INVALID_EVENT_DEFINITION,
                             process, startEvent,
                             eventDefinition,
-                            "Unsupported event definition on start event");
+                            "不支持该启动事件上的事件定义");
                 }
             }
 
@@ -75,7 +75,7 @@ public class StartEventValidator extends ProcessLevelValidator {
                         Problems.START_EVENT_MULTIPLE_FOUND,
                         process,
                         startEvent,
-                        "Multiple none start events are not supported");
+                        "不支持多个空启动事件");
             }
         }
 

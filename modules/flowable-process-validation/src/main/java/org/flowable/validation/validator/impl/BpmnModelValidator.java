@@ -38,7 +38,7 @@ public class BpmnModelValidator extends ValidatorImpl {
             for (Process process : bpmnModel.getProcesses()) {
                 if (!process.isExecutable()) {
                     addWarning(errors, Problems.PROCESS_DEFINITION_NOT_EXECUTABLE, process, process,
-                            "Process definition is not executable. Please verify that this is intentional.");
+                            "流程定义不可执行。请确认这是有意为之");
                 }
                 handleProcessConstraints(bpmnModel, process, errors);
             }
@@ -49,22 +49,22 @@ public class BpmnModelValidator extends ValidatorImpl {
     protected void handleProcessConstraints(BpmnModel bpmnModel, Process process, List<ValidationError> errors) {
         if (process.getId() != null && process.getId().length() > Constraints.PROCESS_DEFINITION_ID_MAX_LENGTH) {
             addError(errors, Problems.PROCESS_DEFINITION_ID_TOO_LONG, process,
-                    "The id of the process definition must not contain more than " + Constraints.PROCESS_DEFINITION_ID_MAX_LENGTH + " characters");
+                    "进程定义的id不能超过" + Constraints.PROCESS_DEFINITION_ID_MAX_LENGTH + "个字符");
         }
         if (process.getName() != null && process.getName().length() > Constraints.PROCESS_DEFINITION_NAME_MAX_LENGTH) {
             addError(errors, Problems.PROCESS_DEFINITION_NAME_TOO_LONG, process,
-                    "The name of the process definition must not contain more than " + Constraints.PROCESS_DEFINITION_NAME_MAX_LENGTH + " characters");
+                    "进程定义的名称不能超过 " + Constraints.PROCESS_DEFINITION_NAME_MAX_LENGTH + "个字符");
         }
         if (process.getDocumentation() != null && process.getDocumentation().length() > Constraints.PROCESS_DEFINITION_DOCUMENTATION_MAX_LENGTH) {
             addError(errors, Problems.PROCESS_DEFINITION_DOCUMENTATION_TOO_LONG, process,
-                    "The documentation of the process definition must not contain more than " + Constraints.PROCESS_DEFINITION_DOCUMENTATION_MAX_LENGTH + " characters");
+                    "流程定义的文档不能包含超过" + Constraints.PROCESS_DEFINITION_DOCUMENTATION_MAX_LENGTH + "个字符");
         }
     }
 
     protected void handleBPMNModelConstraints(BpmnModel bpmnModel, List<ValidationError> errors) {
         if (bpmnModel.getTargetNamespace() != null && bpmnModel.getTargetNamespace().length() > Constraints.BPMN_MODEL_TARGET_NAMESPACE_MAX_LENGTH) {
             addError(errors, Problems.BPMN_MODEL_TARGET_NAMESPACE_TOO_LONG,
-                    "The targetNamespace of the bpmn model must not contain more than " + Constraints.BPMN_MODEL_TARGET_NAMESPACE_MAX_LENGTH + " characters");
+                    "bpmn模型的targetNamespace不能包含超过" + Constraints.BPMN_MODEL_TARGET_NAMESPACE_MAX_LENGTH + "个字符");
         }
     }
 
@@ -81,7 +81,7 @@ public class BpmnModelValidator extends ValidatorImpl {
 
         if (nrOfExecutableDefinitions == 0) {
             addError(errors, Problems.ALL_PROCESS_DEFINITIONS_NOT_EXECUTABLE,
-                    "All process definition are set to be non-executable (property 'isExecutable' on process). This is not allowed.");
+                    "不允许所有进程定义都设置为不可执行（进程上属性“isExecutable”）");
         }
 
         return nrOfExecutableDefinitions > 0;

@@ -38,12 +38,12 @@ public class SubprocessValidator extends ProcessLevelValidator {
                 // Verify start events
                 List<StartEvent> startEvents = process.findFlowElementsInSubProcessOfType(subProcess, StartEvent.class, false);
                 if (startEvents.size() > 1) {
-                    addError(errors, Problems.SUBPROCESS_MULTIPLE_START_EVENTS, process, subProcess, "Multiple start events not supported for subprocess");
+                    addError(errors, Problems.SUBPROCESS_MULTIPLE_START_EVENTS, process, subProcess, "子流程不支持多个启动事件");
                 }
 
                 for (StartEvent startEvent : startEvents) {
                     if (!startEvent.getEventDefinitions().isEmpty()) {
-                        addError(errors, Problems.SUBPROCESS_START_EVENT_EVENT_DEFINITION_NOT_ALLOWED, process, startEvent, "event definitions only allowed on start event if subprocess is an event subprocess");
+                        addError(errors, Problems.SUBPROCESS_START_EVENT_EVENT_DEFINITION_NOT_ALLOWED, process, startEvent, "如果子流程是事件子流程，则只允许在启动事件上定义事件");
                     }
                 }
 

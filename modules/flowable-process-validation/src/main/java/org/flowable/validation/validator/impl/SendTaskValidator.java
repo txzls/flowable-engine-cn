@@ -36,14 +36,14 @@ public class SendTaskValidator extends ExternalInvocationTaskValidator {
 
             // Verify implementation
             if (StringUtils.isEmpty(sendTask.getType()) && !ImplementationType.IMPLEMENTATION_TYPE_WEBSERVICE.equalsIgnoreCase(sendTask.getImplementationType())) {
-                addError(errors, Problems.SEND_TASK_INVALID_IMPLEMENTATION, process, sendTask, "One of the attributes 'type' or 'operation' is mandatory on sendTask");
+                addError(errors, Problems.SEND_TASK_INVALID_IMPLEMENTATION, process, sendTask, "“type”或“operation”属性之一对于sendTask是必需的");
             }
 
             // Verify type
             if (StringUtils.isNotEmpty(sendTask.getType())) {
 
                 if (!"mail".equalsIgnoreCase(sendTask.getType()) && !"camel".equalsIgnoreCase(sendTask.getType())) {
-                    addError(errors, Problems.SEND_TASK_INVALID_TYPE, process, sendTask, "Invalid or unsupported type for send task");
+                    addError(errors, Problems.SEND_TASK_INVALID_TYPE, process, sendTask, "发送任务的操作引用无效");
                 }
 
                 if ("mail".equalsIgnoreCase(sendTask.getType())) {
@@ -75,7 +75,7 @@ public class SendTaskValidator extends ExternalInvocationTaskValidator {
             }
 
             if (!operationFound) {
-                addError(errors, Problems.SEND_TASK_WEBSERVICE_INVALID_OPERATION_REF, process, sendTask, "Invalid operation reference for send task");
+                addError(errors, Problems.SEND_TASK_WEBSERVICE_INVALID_OPERATION_REF, process, sendTask, "发送任务的类型无效或不支持");
             }
 
         }

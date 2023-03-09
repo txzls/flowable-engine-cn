@@ -38,12 +38,12 @@ public class DiagramInterchangeInfoValidator extends ValidatorImpl {
                     if (bpmnModel.getArtifact(bpmnReference) == null) {
                         // check if it's a Pool or Lane, then DI is ok
                         if (bpmnModel.getPool(bpmnReference) == null && bpmnModel.getLane(bpmnReference) == null) {
-                            addWarning(errors, Problems.DI_INVALID_REFERENCE, null, bpmnModel.getFlowElement(bpmnReference), "Invalid reference in diagram interchange definition: could not find " + bpmnReference);
+                            addWarning(errors, Problems.DI_INVALID_REFERENCE, null, bpmnModel.getFlowElement(bpmnReference), "图交换定义中的引用无效:无法找到 " + bpmnReference);
                         }
                     }
                 } else if (!(bpmnModel.getFlowElement(bpmnReference) instanceof FlowNode)) {
-                    addWarning(errors, Problems.DI_DOES_NOT_REFERENCE_FLOWNODE, null, bpmnModel.getFlowElement(bpmnReference), "Invalid reference in diagram interchange definition: " + bpmnReference
-                            + " does not reference a flow node");
+                    addWarning(errors, Problems.DI_DOES_NOT_REFERENCE_FLOWNODE, null, bpmnModel.getFlowElement(bpmnReference), "图交换定义中的引用无效:无法找到 " + bpmnReference
+                            + " 没有引用序列流");
                 }
             }
 
@@ -56,11 +56,11 @@ public class DiagramInterchangeInfoValidator extends ValidatorImpl {
                     // ACT-1625: don't warn when artifacts are referenced from
                     // DI
                     if (bpmnModel.getArtifact(bpmnReference) == null) {
-                        addWarning(errors, Problems.DI_INVALID_REFERENCE, null, bpmnModel.getFlowElement(bpmnReference), "Invalid reference in diagram interchange definition: could not find " + bpmnReference);
+                        addWarning(errors, Problems.DI_INVALID_REFERENCE, null, bpmnModel.getFlowElement(bpmnReference), "图交换定义中的引用无效:无法找到 " + bpmnReference);
                     }
                 } else if (!(bpmnModel.getFlowElement(bpmnReference) instanceof SequenceFlow)) {
-                    addWarning(errors, Problems.DI_DOES_NOT_REFERENCE_SEQ_FLOW, null, bpmnModel.getFlowElement(bpmnReference), "Invalid reference in diagram interchange definition: " + bpmnReference
-                            + " does not reference a sequence flow");
+                    addWarning(errors, Problems.DI_DOES_NOT_REFERENCE_SEQ_FLOW, null, bpmnModel.getFlowElement(bpmnReference), "图交换定义中的引用无效:无法找到 " + bpmnReference
+                            + " 没有引用序列流");
                 }
             }
         }

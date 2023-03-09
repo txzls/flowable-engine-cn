@@ -94,24 +94,24 @@ public class ProcessInstanceHelper {
 
         // Do not start process a process instance if the process definition is suspended
         if (ProcessDefinitionUtil.isProcessDefinitionSuspended(processDefinition.getId())) {
-            throw new FlowableException("Cannot start process instance. Process definition " + processDefinition.getName() + " (id = " + processDefinition.getId() + ") is suspended");
+            throw new FlowableException("无法创建流程。流程定义 " + processDefinition.getName() + " (id = " + processDefinition.getId() + ") 已被挂起。请先激活流程");
         }
 
         // Get model from cache
         Process process = ProcessDefinitionUtil.getProcess(processDefinition.getId());
         if (process == null) {
-            throw new FlowableException("Cannot start process instance. Process model " + processDefinition.getName() + " (id = " + processDefinition.getId() + ") could not be found");
+            throw new FlowableException("无法创建流程。流程定义 " + processDefinition.getName() + " (id = " + processDefinition.getId() + ") 无法找到");
         }
         
         FlowElement initialFlowElement = null;
         if (StringUtils.isNotEmpty(startEventId)) {
             FlowElement startEventFlowElement = process.getFlowElement(startEventId);
             if (startEventFlowElement == null) {
-                throw new FlowableException("No start element found with id " + startEventId + " for process definition " + processDefinition.getId());
+                throw new FlowableException("未找到流程定义 id " + processDefinition.getId() + " 中的启动事件 id " + startEventId);
             }
             
             if (!(startEventFlowElement instanceof StartEvent)) {
-                throw new FlowableException("Provide start event id is not a start event " + startEventId + " for process definition " + processDefinition.getId());
+                throw new FlowableException("流程定义 id " + processDefinition.getId() + " 中的启动元素 id " + startEventId + " 不属于启动事件 ");
             }
             
             initialFlowElement = startEventFlowElement;
@@ -121,7 +121,7 @@ public class ProcessInstanceHelper {
         }
         
         if (initialFlowElement == null) {
-            throw new FlowableException("No start element found for process definition " + processDefinition.getId());
+            throw new FlowableException("无法创建流程。流程定义： " + processDefinition.getId() + " 无启动元素");
         }
 
         return createAndStartProcessInstanceWithInitialFlowElement(processDefinition, businessKey, businessStatus, processInstanceName,
@@ -142,13 +142,13 @@ public class ProcessInstanceHelper {
 
         // Do not start process a process instance if the process definition is suspended
         if (ProcessDefinitionUtil.isProcessDefinitionSuspended(processDefinition.getId())) {
-            throw new FlowableException("Cannot start process instance. Process definition " + processDefinition.getName() + " (id = " + processDefinition.getId() + ") is suspended");
+            throw new FlowableException("创建流程失败。流程定义 " + processDefinition.getName() + " (id = " + processDefinition.getId() + ") 已被挂起。请先激活流程");
         }
 
         // Get model from cache
         Process process = ProcessDefinitionUtil.getProcess(processDefinition.getId());
         if (process == null) {
-            throw new FlowableException("Cannot start process instance. Process model " + processDefinition.getName() + " (id = " + processDefinition.getId() + ") could not be found");
+            throw new FlowableException("创建流程失败。流程定义 " + processDefinition.getName() + " (id = " + processDefinition.getId() + ") 无法找到");
         }
 
         FlowElement initialFlowElement = null;
@@ -167,7 +167,7 @@ public class ProcessInstanceHelper {
             }
         }
         if (initialFlowElement == null) {
-            throw new FlowableException("No message start event found for process definition " + processDefinition.getId() + " and message name " + messageName);
+            throw new FlowableException("流程创建失败。没有找到流程定义 " + processDefinition.getId() + " 和消息名 " + messageName + " 的消息启动事件");
         }
 
         return createAndStartProcessInstanceWithInitialFlowElement(processDefinition, businessKey, businessStatus, null, null, null, initialFlowElement,

@@ -53,7 +53,7 @@ public class IntermediateCatchEventValidator extends ProcessLevelValidator {
                     }
                 }
 
-                addError(errors, Problems.INTERMEDIATE_CATCH_EVENT_NO_EVENTDEFINITION, process, intermediateCatchEvent, "No event definition for intermediate catch event ");
+                addError(errors, Problems.INTERMEDIATE_CATCH_EVENT_NO_EVENTDEFINITION, process, intermediateCatchEvent, "不支持的中间捕获事件类型");
                 
             } else {
                 if (!(eventDefinition instanceof TimerEventDefinition) && 
@@ -62,7 +62,7 @@ public class IntermediateCatchEventValidator extends ProcessLevelValidator {
                         !(eventDefinition instanceof ConditionalEventDefinition) && 
                         !(eventDefinition instanceof VariableListenerEventDefinition)) {
                     
-                    addError(errors, Problems.INTERMEDIATE_CATCH_EVENT_INVALID_EVENTDEFINITION, process, intermediateCatchEvent, eventDefinition, "Unsupported intermediate catch event type");
+                    addError(errors, Problems.INTERMEDIATE_CATCH_EVENT_INVALID_EVENTDEFINITION, process, intermediateCatchEvent, eventDefinition, "不支持的中间捕获事件类型");
                 }
             }
         }

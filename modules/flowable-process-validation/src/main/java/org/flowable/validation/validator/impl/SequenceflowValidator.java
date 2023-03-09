@@ -38,10 +38,10 @@ public class SequenceflowValidator extends ProcessLevelValidator {
             String targetRef = sequenceFlow.getTargetRef();
 
             if (StringUtils.isEmpty(sourceRef)) {
-                addError(errors, Problems.SEQ_FLOW_INVALID_SRC, process, sequenceFlow, "Invalid source for sequenceflow");
+                addError(errors, Problems.SEQ_FLOW_INVALID_SRC, process, sequenceFlow, "序列流的源无效");
             }
             if (StringUtils.isEmpty(targetRef)) {
-                addError(errors, Problems.SEQ_FLOW_INVALID_TARGET, process, sequenceFlow, "Invalid target for sequenceflow");
+                addError(errors, Problems.SEQ_FLOW_INVALID_TARGET, process, sequenceFlow, "序列流的目标无效");
             }
 
             // Implicit check: sequence flow cannot cross (sub) process boundaries, hence we check the parent and not the process
@@ -51,11 +51,11 @@ public class SequenceflowValidator extends ProcessLevelValidator {
             
             // Src and target validation
             if (source == null) {
-                addError(errors, Problems.SEQ_FLOW_INVALID_SRC, process, sequenceFlow, "Invalid source for sequenceflow");
+                addError(errors, Problems.SEQ_FLOW_INVALID_SRC, process, sequenceFlow, "序列流的源无效");
             }
             
             if (target == null) {
-                addError(errors, Problems.SEQ_FLOW_INVALID_TARGET, process, sequenceFlow, "Invalid target for sequenceflow");
+                addError(errors, Problems.SEQ_FLOW_INVALID_TARGET, process, sequenceFlow, "序列流的目标无效");
             }
 
             if (source != null && target != null) {
@@ -63,15 +63,15 @@ public class SequenceflowValidator extends ProcessLevelValidator {
                 FlowElementsContainer targetContainer = process.getFlowElementsContainer(target.getId());
                 
                 if (sourceContainer == null) {
-                    addError(errors, Problems.SEQ_FLOW_INVALID_SRC, process, sequenceFlow, "Invalid source for sequenceflow");
+                    addError(errors, Problems.SEQ_FLOW_INVALID_SRC, process, sequenceFlow, "序列流的源无效");
                 }
                 
                 if (targetContainer == null) {
-                    addError(errors, Problems.SEQ_FLOW_INVALID_TARGET, process, sequenceFlow, "Invalid target for sequenceflow");
+                    addError(errors, Problems.SEQ_FLOW_INVALID_TARGET, process, sequenceFlow, "序列流的目标无效");
                 }
                 
                 if (sourceContainer != null && targetContainer != null && !sourceContainer.equals(targetContainer)) {
-                    addError(errors, Problems.SEQ_FLOW_INVALID_TARGET, process, sequenceFlow, "Invalid target for sequenceflow, the target isn't defined in the same scope as the source");
+                    addError(errors, Problems.SEQ_FLOW_INVALID_TARGET, process, sequenceFlow, "序列流的目标无效, 目标没有定义在与源相同的作用域中");
                 }
             }
         }

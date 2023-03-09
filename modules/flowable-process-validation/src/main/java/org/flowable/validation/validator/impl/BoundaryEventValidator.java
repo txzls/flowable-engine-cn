@@ -70,14 +70,14 @@ public class BoundaryEventValidator extends ProcessLevelValidator {
                         !(eventDefinition instanceof EscalationEventDefinition) &&
                         !(eventDefinition instanceof VariableListenerEventDefinition)) {
                     
-                    addError(errors, Problems.BOUNDARY_EVENT_INVALID_EVENT_DEFINITION, process, boundaryEvent, eventDefinition, "Invalid or unsupported event definition");
+                    addError(errors, Problems.BOUNDARY_EVENT_INVALID_EVENT_DEFINITION, process, boundaryEvent, eventDefinition, "无效或不支持的事件定义");
                 }
 
                 if (eventDefinition instanceof CancelEventDefinition) {
 
                     FlowElement attachedToFlowElement = bpmnModel.getFlowElement(boundaryEvent.getAttachedToRefId());
                     if (!(attachedToFlowElement instanceof Transaction)) {
-                        addError(errors, Problems.BOUNDARY_EVENT_CANCEL_ONLY_ON_TRANSACTION, process, boundaryEvent, "boundary event with cancelEventDefinition only supported on transaction subprocesses");
+                        addError(errors, Problems.BOUNDARY_EVENT_CANCEL_ONLY_ON_TRANSACTION, process, boundaryEvent, "仅在事务子流程上支持带有cancelEventDefinition的边界事件");
                     } else {
                         if (!cancelBoundaryEventsCounts.containsKey(attachedToFlowElement.getId())) {
                             cancelBoundaryEventsCounts.put(attachedToFlowElement.getId(), Integer.valueOf(0));
@@ -105,7 +105,7 @@ public class BoundaryEventValidator extends ProcessLevelValidator {
                                         MessageEventDefinition currentMessageEventDefinition = (MessageEventDefinition) eventDefinition;
                                         MessageEventDefinition otherMessageEventDefinition = (MessageEventDefinition) otherEventDefinition;
                                         if (otherMessageEventDefinition.getMessageRef() != null && otherMessageEventDefinition.getMessageRef().equals(currentMessageEventDefinition.getMessageRef())) {
-                                            addError(errors, Problems.MESSAGE_EVENT_MULTIPLE_ON_BOUNDARY_SAME_MESSAGE_ID, process, boundaryEvent, "Multiple message events with same message id not supported");
+                                            addError(errors, Problems.MESSAGE_EVENT_MULTIPLE_ON_BOUNDARY_SAME_MESSAGE_ID, process, boundaryEvent, "不支持具有相同消息id的多个消息事件");
                                         }
                                     }
                                 }
@@ -128,7 +128,7 @@ public class BoundaryEventValidator extends ProcessLevelValidator {
                 }
 
                 if (!isEventRegistryBoundaryEvent) {
-                    addError(errors, Problems.BOUNDARY_EVENT_NO_EVENT_DEFINITION, process, boundaryEvent, "Event definition is missing from boundary event");
+                    addError(errors, Problems.BOUNDARY_EVENT_NO_EVENT_DEFINITION, process, boundaryEvent, "边界事件中缺少事件定义");
                 }
             }
         }
@@ -136,13 +136,13 @@ public class BoundaryEventValidator extends ProcessLevelValidator {
         for (String elementId : cancelBoundaryEventsCounts.keySet()) {
             if (cancelBoundaryEventsCounts.get(elementId) > 1) {
                 addError(errors, Problems.BOUNDARY_EVENT_MULTIPLE_CANCEL_ON_TRANSACTION, process, bpmnModel.getFlowElement(elementId),
-                        "multiple boundary events with cancelEventDefinition not supported on same transaction subprocess.");
+                        "同一事务子流程不支持带有cancelEventDefinition的多个边界事件");
             }
         }
 
         for (String elementId : compensateBoundaryEventsCounts.keySet()) {
             if (compensateBoundaryEventsCounts.get(elementId) > 1) {
-                addError(errors, Problems.COMPENSATE_EVENT_MULTIPLE_ON_BOUNDARY, process, bpmnModel.getFlowElement(elementId), "Multiple boundary events of type 'compensate' is invalid");
+                addError(errors, Problems.COMPENSATE_EVENT_MULTIPLE_ON_BOUNDARY, process, bpmnModel.getFlowElement(elementId), "“compensate”类型的多个边界事件无效");
             }
         }
 

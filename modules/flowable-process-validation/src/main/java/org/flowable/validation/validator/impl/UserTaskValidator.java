@@ -36,16 +36,16 @@ public class UserTaskValidator extends ProcessLevelValidator {
                 for (FlowableListener listener : userTask.getTaskListeners()) {
                     if (listener.getEvent() == null) {
                         addError(errors, Problems.USER_TASK_LISTENER_MISSING_EVENT, process, userTask, listener,
-                                "Element 'event' is mandatory on taskListener");
+                                "元素”event“在taskListener上是必需的");
                     }
                     if (ImplementationType.IMPLEMENTATION_TYPE_SCRIPT.equals(listener.getImplementationType())) {
                         if (listener.getScriptInfo() == null) {
                             addError(errors, Problems.USER_TASK_LISTENER_IMPLEMENTATION_MISSING, process, userTask, listener,
-                                    "taskListener of type 'script' expects a <script> child element.");
+                                    "”script“类型的taskListener需要一个<script>子元素。");
                         }
                     } else if (listener.getImplementation() == null || listener.getImplementationType() == null) {
                         addError(errors, Problems.USER_TASK_LISTENER_IMPLEMENTATION_MISSING, process, userTask, listener,
-                                "Element 'class' or 'expression' or 'type=\"script\"' is mandatory on taskListener");
+                                "元素“class”或“expression”或“type=\"script\"”在taskListener上是必需的");
                     }
                 }
             }

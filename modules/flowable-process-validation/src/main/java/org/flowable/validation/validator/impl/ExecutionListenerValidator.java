@@ -45,11 +45,11 @@ public class ExecutionListenerValidator extends ProcessLevelValidator {
                 if (ImplementationType.IMPLEMENTATION_TYPE_SCRIPT.equals(listener.getImplementationType())) {
                     if (listener.getScriptInfo() == null) {
                         addError(errors, Problems.EXECUTION_LISTENER_IMPLEMENTATION_MISSING, process, listener,
-                                "executionListener of type 'script' expects a <script> child element.");
+                                "”script“类型的executionListener需要<script>子元素。");
                     }
                 } else if (listener.getImplementation() == null || listener.getImplementationType() == null) {
                     addError(errors, Problems.EXECUTION_LISTENER_IMPLEMENTATION_MISSING, process, flowElement, listener,
-                            "Element 'class' or 'expression' or type=\"script\" is mandatory on executionListener");
+                            "在executionListener上必需有元素'class'或“expression”或type=\"script\"");
                 }
             }
         }

@@ -51,7 +51,7 @@ public class ServiceTaskValidator extends ExternalInvocationTaskValidator {
                 && StringUtils.isEmpty(serviceTask.getType())) {
             
             addError(errors, Problems.SERVICE_TASK_MISSING_IMPLEMENTATION, process, serviceTask,
-                    "One of the attributes 'class', 'delegateExpression', 'type', 'operation', or 'expression' is mandatory on serviceTask.");
+                    "属性“class“、“delegateExpression“、“type“、“operation“或“expression“中的一个在serviceTask上是必需的");
         }
     }
 
@@ -91,7 +91,7 @@ public class ServiceTaskValidator extends ExternalInvocationTaskValidator {
     }
 
     protected void validateUnknownServiceTaskType(Process process, ServiceTask serviceTask, List<ValidationError> errors) {
-        addError(errors, Problems.SERVICE_TASK_INVALID_TYPE, process, serviceTask, "Invalid or unsupported service task type");
+        addError(errors, Problems.SERVICE_TASK_INVALID_TYPE, process, serviceTask, "服务任务类型无效或不支持");
     }
 
     protected void verifyResultVariableName(Process process, ServiceTask serviceTask, List<ValidationError> errors) {
@@ -99,11 +99,11 @@ public class ServiceTaskValidator extends ExternalInvocationTaskValidator {
                 && (ImplementationType.IMPLEMENTATION_TYPE_CLASS.equals(serviceTask.getImplementationType()) || 
                                 ImplementationType.IMPLEMENTATION_TYPE_DELEGATEEXPRESSION.equals(serviceTask.getImplementationType()))) {
             
-            addError(errors, Problems.SERVICE_TASK_RESULT_VAR_NAME_WITH_DELEGATE, process, serviceTask, "'resultVariableName' not supported for service tasks using 'class' or 'delegateExpression");
+            addError(errors, Problems.SERVICE_TASK_RESULT_VAR_NAME_WITH_DELEGATE, process, serviceTask, "使用“class“或“delegateExpression “的服务任务不支持“resultVariableName“");
         }
 
         if (serviceTask.isUseLocalScopeForResultVariable() && StringUtils.isEmpty(serviceTask.getResultVariableName())) {
-            addWarning(errors, Problems.SERVICE_TASK_USE_LOCAL_SCOPE_FOR_RESULT_VAR_WITHOUT_RESULT_VARIABLE_NAME, process, serviceTask, "'useLocalScopeForResultVariable' is set, but no 'resultVariableName' is set. The property would not be used");
+            addWarning(errors, Problems.SERVICE_TASK_USE_LOCAL_SCOPE_FOR_RESULT_VAR_WITHOUT_RESULT_VARIABLE_NAME, process, serviceTask, "“useLocalScopeForResultVariable“被设置，但“resultVariableName“没有被设置。该参数将不会被使用");
         }
     }
 
@@ -125,7 +125,7 @@ public class ServiceTaskValidator extends ExternalInvocationTaskValidator {
             }
 
             if (!operationFound) {
-                addError(errors, Problems.SERVICE_TASK_WEBSERVICE_INVALID_OPERATION_REF, process, serviceTask, "Invalid operation reference");
+                addError(errors, Problems.SERVICE_TASK_WEBSERVICE_INVALID_OPERATION_REF, process, serviceTask, "无效的操作引用");
             }
 
         }
