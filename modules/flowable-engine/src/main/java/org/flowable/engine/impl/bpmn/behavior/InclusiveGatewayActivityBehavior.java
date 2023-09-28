@@ -14,6 +14,7 @@ package org.flowable.engine.impl.bpmn.behavior;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 
 import org.flowable.bpmn.model.FlowNode;
@@ -21,8 +22,8 @@ import org.flowable.common.engine.impl.context.Context;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.impl.delegate.InactiveActivityBehavior;
-import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
-import org.flowable.engine.impl.persistence.entity.ExecutionEntityManager;
+import org.flowable.engine.impl.history.HistoryManager;
+import org.flowable.engine.impl.persistence.entity.*;
 import org.flowable.engine.impl.util.CommandContextUtil;
 import org.flowable.engine.impl.util.ExecutionGraphUtil;
 import org.slf4j.Logger;
@@ -106,7 +107,7 @@ public class InclusiveGatewayActivityBehavior extends GatewayActivityBehavior im
                         CommandContextUtil.getActivityInstanceEntityManager(commandContext).recordActivityEnd(executionEntityInGateway, null);
                     }
 
-                    executionEntityManager.deleteExecutionAndRelatedData(executionEntityInGateway, null, false);
+                    executionEntityManager.deleteExecutionAndRelatedData(executionEntityInGateway, "Join in id="+execution.getId(), false);
                 }
             }
 

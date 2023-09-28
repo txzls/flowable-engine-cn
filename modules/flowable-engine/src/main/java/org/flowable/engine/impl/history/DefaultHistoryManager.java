@@ -250,6 +250,18 @@ public class DefaultHistoryManager extends AbstractHistoryManager {
     }
 
     @Override
+    public void updateHistoricActivityInstanceDeleteReason(ActivityInstance activityInstance) {
+        if (activityInstance != null && getHistoryConfigurationSettings().isHistoryEnabledForActivity(activityInstance)){
+            HistoricActivityInstanceEntity historicActivityInstance = getHistoricActivityInstanceEntityManager().findById(activityInstance.getId());
+            if (historicActivityInstance != null) {
+                if (historicActivityInstance.getDeleteReason() == null) {
+                    historicActivityInstance.setDeleteReason(activityInstance.getDeleteReason());
+                }
+            }
+        }
+    }
+
+    @Override
     public void recordProcessDefinitionChange(String processInstanceId, String processDefinitionId) {
         if (isHistoryLevelAtLeast(HistoryLevel.ACTIVITY, processDefinitionId)) {
             HistoricProcessInstanceEntity historicProcessInstance = getHistoricProcessInstanceEntityManager().findById(processInstanceId);

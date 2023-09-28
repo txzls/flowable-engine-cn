@@ -110,6 +110,7 @@ public interface HistoryManager {
      */
     HistoricActivityInstanceEntity findHistoricActivityInstance(ExecutionEntity execution, boolean validateEndTimeNull);
 
+    void updateHistoricActivityInstanceDeleteReason(ActivityInstance activityInstance);
     /**
      * Record a change of the process-definition id of a process instance, if activity history is enabled.
      */

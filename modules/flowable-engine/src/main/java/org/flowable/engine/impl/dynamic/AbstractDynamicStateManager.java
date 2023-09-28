@@ -347,14 +347,14 @@ public abstract class AbstractDynamicStateManager {
                 safeDeleteSubProcessInstance(callActivityInstanceId, moveExecutionContainer.getExecutions(), deleteReason, commandContext);
             }
 
-            List<ExecutionEntity> executionsToMove;
+            List<ExecutionEntity> executionsToMove; //要移动的execution，如果要移动到父节点则为父execution
             if (moveExecutionContainer.isMoveToParentProcess()) {
                 executionsToMove = Collections.singletonList(moveExecutionContainer.getSuperExecution());
             } else {
                 executionsToMove = moveExecutionContainer.getExecutions();
             }
 
-            Collection<FlowElementMoveEntry> moveToFlowElements;
+            Collection<FlowElementMoveEntry> moveToFlowElements;//目标元素，如果要移动到子节点则为对应的callActivity
             if (moveExecutionContainer.isMoveToSubProcessInstance()) {
                 moveToFlowElements = Collections.singletonList(new FlowElementMoveEntry(moveExecutionContainer.getCallActivity(), moveExecutionContainer.getCallActivity()));
             } else {

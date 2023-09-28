@@ -65,7 +65,7 @@ public class TaskHelper {
             Map<String, Object> transientVariables, Map<String, Object> localTransientVariables, CommandContext commandContext) {
 
         if (taskEntity.getDelegationState() != null && taskEntity.getDelegationState() == DelegationState.PENDING) {
-            throw new FlowableException("A delegated task cannot be completed, but should be resolved instead.");
+            throw new FlowableException("委派的任务不能被完成，应该先被解决。");
         }
 
         if (localVariables != null && !localVariables.isEmpty()) {

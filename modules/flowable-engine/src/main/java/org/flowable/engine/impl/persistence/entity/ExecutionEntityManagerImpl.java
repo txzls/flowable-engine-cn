@@ -13,14 +13,6 @@
 
 package org.flowable.engine.impl.persistence.entity;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.flowable.bpmn.model.CaseServiceTask;
 import org.flowable.bpmn.model.FlowElement;
 import org.flowable.bpmn.model.FlowNode;
@@ -49,13 +41,7 @@ import org.flowable.engine.impl.history.HistoryManager;
 import org.flowable.engine.impl.persistence.CountingExecutionEntity;
 import org.flowable.engine.impl.persistence.entity.data.ExecutionDataManager;
 import org.flowable.engine.impl.runtime.callback.ProcessInstanceState;
-import org.flowable.engine.impl.util.BpmnLoggingSessionUtil;
-import org.flowable.engine.impl.util.CommandContextUtil;
-import org.flowable.engine.impl.util.CountingEntityUtil;
-import org.flowable.engine.impl.util.EventUtil;
-import org.flowable.engine.impl.util.ProcessDefinitionUtil;
-import org.flowable.engine.impl.util.ProcessInstanceHelper;
-import org.flowable.engine.impl.util.TaskHelper;
+import org.flowable.engine.impl.util.*;
 import org.flowable.engine.repository.ProcessDefinition;
 import org.flowable.engine.runtime.Execution;
 import org.flowable.engine.runtime.ProcessInstance;
@@ -77,6 +63,8 @@ import org.flowable.variable.api.persistence.entity.VariableInstance;
 import org.flowable.variable.service.impl.persistence.entity.VariableInstanceEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 /**
  * @author Tom Baeyens
@@ -560,7 +548,20 @@ public class ExecutionEntityManagerImpl
             
             CommandContextUtil.getActivityInstanceEntityManager().recordActivityEnd(executionEntity, deleteReason);
         }
-        
+        if (!deleteHistory && !executionEntity.isActive()
+                && !executionEntity.isMultiInstanceRoot()
+                && deleteReason != null) {
+
+            ActivityInstanceEntityManager activityInstanceEntityManager = CommandContextUtil.getActivityInstanceEntityManager();
+            List<ActivityInstanceEntity> activityInstanceEntities = activityInstanceEntityManager.findActivityInstancesByExecutionAndActivityId(executionEntity.getId(), executionEntity.getActivityId());
+            for (ActivityInstanceEntity activityInstanceEntity : activityInstanceEntities) {
+                if (activityInstanceEntity.getDeleteReason() == null) {
+                    activityInstanceEntity.setDeleteReason(deleteReason);
+                    CommandContextUtil.getHistoryManager().updateHistoricActivityInstanceDeleteReason(activityInstanceEntity);
+                }
+            }
+        }
+
         deleteRelatedDataForExecution(executionEntity, deleteReason, directDeleteInDatabase);
         delete(executionEntity);
 

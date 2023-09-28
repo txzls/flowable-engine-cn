@@ -161,6 +161,13 @@ public class CompositeHistoryManager implements HistoryManager {
     }
 
     @Override
+    public void updateHistoricActivityInstanceDeleteReason(ActivityInstance activityInstance) {
+        for (HistoryManager historyManager : historyManagers) {
+            historyManager.updateHistoricActivityInstanceDeleteReason(null);
+        }
+    }
+
+    @Override
     public void recordProcessDefinitionChange(String processInstanceId, String processDefinitionId) {
         for (HistoryManager historyManager : historyManagers) {
             historyManager.recordProcessDefinitionChange(processInstanceId, processDefinitionId);

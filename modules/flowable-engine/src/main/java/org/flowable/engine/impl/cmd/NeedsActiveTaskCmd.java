@@ -43,18 +43,18 @@ public abstract class NeedsActiveTaskCmd<T> implements Command<T>, Serializable 
     public T execute(CommandContext commandContext) {
 
         if (taskId == null) {
-            throw new FlowableIllegalArgumentException("taskId is null");
+            throw new FlowableIllegalArgumentException("taskId为空");
         }
 
         ProcessEngineConfigurationImpl processEngineConfiguration = CommandContextUtil.getProcessEngineConfiguration(commandContext);
         TaskEntity task = processEngineConfiguration.getTaskServiceConfiguration().getTaskService().getTask(taskId);
 
         if (task == null) {
-            throw new FlowableObjectNotFoundException("Cannot find task with id " + taskId, Task.class);
+            throw new FlowableObjectNotFoundException("无法找到任务 id " + taskId, Task.class);
         }
 
         if (task.isDeleted()) {
-            throw new FlowableException("Task is already deleted");
+            throw new FlowableException("任务已被删除");
         }
 
         if (task.isSuspended()) {
@@ -73,7 +73,7 @@ public abstract class NeedsActiveTaskCmd<T> implements Command<T>, Serializable 
      * Subclasses can override this method to provide a customized exception message that will be thrown when the task is suspended.
      */
     protected String getSuspendedTaskException() {
-        return "Cannot execute operation: task is suspended";
+        return "无法执行操作：任务已被挂起";
     }
 
 }

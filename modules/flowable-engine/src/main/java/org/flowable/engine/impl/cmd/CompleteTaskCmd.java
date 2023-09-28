@@ -95,6 +95,6 @@ public class CompleteTaskCmd extends NeedsActiveTaskCmd<Void> {
 
     @Override
     protected String getSuspendedTaskException() {
-        return "Cannot complete a suspended task";
+        return "不能完成一个被挂起的任务";
     }
 }

@@ -28,6 +28,7 @@ public interface HistoryJsonConstants {
             HistoryJsonConstants.TYPE_PROCESS_INSTANCE_PROPERTY_CHANGED,
             HistoryJsonConstants.TYPE_ACTIVITY_START,
             HistoryJsonConstants.TYPE_ACTIVITY_END,
+            HistoryJsonConstants.TYPE_ACTIVITY_DELETE_REASON,
             HistoryJsonConstants.TYPE_ACTIVITY_FULL,
             HistoryJsonConstants.TYPE_TASK_CREATED,
             HistoryJsonConstants.TYPE_TASK_ASSIGNEE_CHANGED,
@@ -56,6 +57,7 @@ public interface HistoryJsonConstants {
     String TYPE_UPDATE_PROCESS_DEFINITION_CASCADE = "update-process-definition-cascade";
     String TYPE_ACTIVITY_START = "activity-start";
     String TYPE_ACTIVITY_END = "activity-end";
+    String TYPE_ACTIVITY_DELETE_REASON = "activity-delete-reason";
     String TYPE_ACTIVITY_FULL = "activity-full";
     String TYPE_FORM_PROPERTIES_SUBMITTED = "form-properties-submitted";
     String TYPE_HISTORIC_DETAIL_VARIABLE_UPDATE = "historic-detail-variable-update";

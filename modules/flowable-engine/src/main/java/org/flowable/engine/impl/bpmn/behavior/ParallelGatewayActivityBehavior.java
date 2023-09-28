@@ -23,9 +23,12 @@ import org.flowable.bpmn.model.FlowNode;
 import org.flowable.bpmn.model.ParallelGateway;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.engine.delegate.DelegateExecution;
-import org.flowable.engine.impl.persistence.entity.ExecutionEntity;
-import org.flowable.engine.impl.persistence.entity.ExecutionEntityManager;
+import org.flowable.engine.impl.history.HistoryManager;
+import org.flowable.engine.impl.persistence.entity.*;
 import org.flowable.engine.impl.util.CommandContextUtil;
+import org.flowable.job.api.Job;
+import org.flowable.job.api.JobInfo;
+import org.flowable.job.service.impl.asyncexecutor.AsyncExecutor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,6 +101,8 @@ public class ParallelGatewayActivityBehavior extends GatewayActivityBehavior {
 
             if (parallelGateway.getIncomingFlows().size() > 1) {
 
+                HistoryManager historyManager = CommandContextUtil.getHistoryManager();
+                ActivityInstanceEntityManager activityInstanceEntityManager = CommandContextUtil.getActivityInstanceEntityManager();
                 // All (now inactive) children are deleted.
                 for (ExecutionEntity joinedExecution : joinedExecutions) {
 
@@ -105,6 +110,14 @@ public class ParallelGatewayActivityBehavior extends GatewayActivityBehavior {
                     if (!joinedExecution.getId().equals(execution.getId())) {
                         executionEntityManager.deleteRelatedDataForExecution(joinedExecution, null, false);
                         executionEntityManager.delete(joinedExecution);
+
+                        List<ActivityInstanceEntity> activityInstanceEntities = activityInstanceEntityManager.findActivityInstancesByExecutionAndActivityId(joinedExecution.getId(), ((ExecutionEntity) execution).getActivityId());
+                        for (ActivityInstanceEntity activityInstanceEntity : activityInstanceEntities) {
+                            if (activityInstanceEntity.getDeleteReason() == null) {
+                                activityInstanceEntity.setDeleteReason("Join in id="+execution.getId());
+                                historyManager.updateHistoricActivityInstanceDeleteReason(activityInstanceEntity);
+                            }
+                        }
                     }
 
                 }
