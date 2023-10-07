@@ -19,6 +19,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,10 +28,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
-import org.flowable.cmmn.api.CmmnRuntimeService;
 import org.flowable.cmmn.api.runtime.CaseInstance;
 import org.flowable.cmmn.api.runtime.PlanItemInstance;
-import org.flowable.cmmn.rest.service.api.CmmnRestApiInterceptor;
 import org.flowable.cmmn.rest.service.api.CmmnRestResponseFactory;
 import org.flowable.cmmn.rest.service.api.engine.variable.RestVariable;
 import org.flowable.cmmn.rest.service.api.engine.variable.RestVariable.RestVariableScope;
@@ -52,19 +51,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 /**
  * @author Tijs Rademakers
  */
-public class BaseVariableResource implements InitializingBean {
+public class BaseVariableResource extends BaseCaseInstanceResource implements InitializingBean{
 
     @Autowired
     protected ObjectMapper objectMapper;
-    
-    @Autowired
-    protected CmmnRuntimeService runtimeService;
-    
-    @Autowired
-    protected CmmnRestResponseFactory restResponseFactory;
-    
-    @Autowired(required=false)
-    protected CmmnRestApiInterceptor restApiInterceptor;
+
     
     @Autowired
     protected Environment env;
@@ -75,20 +66,7 @@ public class BaseVariableResource implements InitializingBean {
     public void afterPropertiesSet() {
         isSerializableVariableAllowed = env.getProperty("rest.variables.allow.serializable", Boolean.class, true);
     }
-    
-    protected CaseInstance getCaseInstanceFromRequest(String caseInstanceId) {
-        CaseInstance caseInstance = runtimeService.createCaseInstanceQuery().caseInstanceId(caseInstanceId).singleResult();
-        if (caseInstance == null) {
-            throw new FlowableObjectNotFoundException("Could not find a case instance with id '" + caseInstanceId + "'.");
-        }
-        
-        if (restApiInterceptor != null) {
-            restApiInterceptor.accessCaseInstanceInfoById(caseInstance);
-        }
-        
-        return caseInstance;
-    }
-    
+
     protected PlanItemInstance getPlanItemInstanceFromRequest(String planItemInstanceId) {
         PlanItemInstance planItemInstance = runtimeService.createPlanItemInstanceQuery().planItemInstanceId(planItemInstanceId).singleResult();
         if (planItemInstance == null) {
@@ -102,49 +80,64 @@ public class BaseVariableResource implements InitializingBean {
         return planItemInstance;
     }
 
-    public RestVariable getVariableFromRequest(CaseInstance caseInstance, String variableName, int variableType, boolean includeBinary) {
-        Object value = null;
+    public RestVariable getVariableFromRequest(CaseInstance caseInstance, String variableName, boolean includeBinary) {
 
         if (caseInstance == null) {
             throw new FlowableObjectNotFoundException("Could not find a case instance", CaseInstance.class);
         }
 
-        value = runtimeService.getVariable(caseInstance.getId(), variableName);
-
-        if (value == null) {
-            throw new FlowableObjectNotFoundException("Case instance '" + caseInstance.getId() + "' doesn't have a variable with name: '" + variableName + "'.", VariableInstance.class);
-        } else {
-            //we use null for the scope, because the extraction from request does not require the scope
-            return constructRestVariable(variableName, value, caseInstance.getId(), variableType, includeBinary, null);
+        if (restApiInterceptor != null) {
+            restApiInterceptor.accessCaseInstanceVariable(caseInstance, variableName);
         }
+
+        return getVariableFromRequestWithoutAccessCheck(caseInstance.getId(), variableName, CmmnRestResponseFactory.VARIABLE_CASE, includeBinary);
     }
 
-    public RestVariable getVariableFromRequest(PlanItemInstance planItemInstance, String variableName, int variableType, boolean includeBinary) {
-        Object value = null;
-
+    public RestVariable getVariableFromRequest(PlanItemInstance planItemInstance, String variableName, boolean includeBinary) {
         if (planItemInstance == null) {
             throw new FlowableObjectNotFoundException("Could not find a plan item instance", CaseInstance.class);
         }
 
-        value = runtimeService.getLocalVariable(planItemInstance.getId(), variableName);
-
-        if (value == null) {
-            throw new FlowableObjectNotFoundException(
-                    "Plan item instance '" + planItemInstance.getId() + "' doesn't have a variable with name: '" + variableName + "'.",
-                    VariableInstance.class);
-        } else {
-            //we use null for the scope, because the extraction from request does not require the scope
-            return constructRestVariable(variableName, value, planItemInstance.getId(), variableType, includeBinary, null);
+        if (restApiInterceptor != null) {
+            restApiInterceptor.accessPlanItemInstanceVariable(planItemInstance, variableName);
         }
+        return getVariableFromRequestWithoutAccessCheck(planItemInstance.getId(), variableName, CmmnRestResponseFactory.VARIABLE_PLAN_ITEM, includeBinary);
     }
 
-    protected byte[] getVariableDataByteArray(CaseInstance caseInstance, String variableName, int variableType, HttpServletResponse response) {
-        RestVariable variable = getVariableFromRequest(caseInstance, variableName, variableType, true);
+    protected RestVariable getVariableFromRequestWithoutAccessCheck(String instanceId, String variableName, int variableType, boolean includeBinary) {
+        Object value = null;
+
+        if (variableType == CmmnRestResponseFactory.VARIABLE_PLAN_ITEM) {
+            value = runtimeService.getLocalVariable(instanceId, variableName);
+        } else if (variableType == CmmnRestResponseFactory.VARIABLE_CASE) {
+            value = runtimeService.getVariable(instanceId, variableName);
+        } else {
+            throw new FlowableIllegalArgumentException("Unknown variable type " + variableType);
+        }
+
+        if (value == null) {
+            if (variableType == CmmnRestResponseFactory.VARIABLE_PLAN_ITEM) {
+                throw new FlowableObjectNotFoundException(
+                        "Plan item instance '" + instanceId + "' doesn't have a variable with name: '" + variableName + "'.",
+                        VariableInstance.class);
+            } else {
+                throw new FlowableObjectNotFoundException(
+                        "Case instance '" + instanceId + "' doesn't have a variable with name: '" + variableName + "'.",
+                        VariableInstance.class);
+            }
+        }
+
+        //we use null for the scope, because the extraction from request does not require the scope
+        return constructRestVariable(variableName, value, instanceId, variableType, includeBinary, null);
+    }
+
+    protected byte[] getVariableDataByteArray(CaseInstance caseInstance, String variableName, HttpServletResponse response) {
+        RestVariable variable = getVariableFromRequest(caseInstance, variableName, true);
         return restVariableDataToRestResponse(variable, response);
     }
 
-    protected byte[] getVariableDataByteArray(PlanItemInstance planItemInstance, String variableName, int variableType, HttpServletResponse response) {
-        RestVariable variable = getVariableFromRequest(planItemInstance, variableName, variableType, true);
+    protected byte[] getVariableDataByteArray(PlanItemInstance planItemInstance, String variableName, HttpServletResponse response) {
+        RestVariable variable = getVariableFromRequest(planItemInstance, variableName, true);
         return restVariableDataToRestResponse(variable, response);
     }
 
@@ -177,29 +170,31 @@ public class BaseVariableResource implements InitializingBean {
         return restResponseFactory.createRestVariable(variableName, value, scope, caseInstanceId, variableType, includeBinary);
     }
 
-    protected List<RestVariable> processCaseVariables(CaseInstance caseInstance, int variableType) {
+    protected List<RestVariable> processCaseVariables(CaseInstance caseInstance) {
 
         // Check if it's a valid execution to get the variables for
-        List<RestVariable> variables = addVariables(caseInstance, variableType);
+        List<RestVariable> variables = addVariables(caseInstance);
 
         // Get unique variables from map
         List<RestVariable> result = new ArrayList<>(variables);
         return result;
     }
 
-    protected Object createVariable(CaseInstance caseInstance, int variableType, HttpServletRequest request, HttpServletResponse response) {
-        return createVariable(caseInstance.getId(), variableType, request, response, RestVariableScope.GLOBAL);
+    protected Object createVariable(CaseInstance caseInstance, HttpServletRequest request, HttpServletResponse response) {
+        return createVariable(caseInstance.getId(), CmmnRestResponseFactory.VARIABLE_CASE, request, response, RestVariableScope.GLOBAL,
+                createVariableInterceptor(caseInstance));
     }
 
-    protected Object createVariable(PlanItemInstance planItemInstance, int variableType, HttpServletRequest request, HttpServletResponse response) {
-        return createVariable(planItemInstance.getId(), variableType, request, response, RestVariableScope.LOCAL);
+    protected Object createVariable(PlanItemInstance planItemInstance, HttpServletRequest request, HttpServletResponse response) {
+        return createVariable(planItemInstance.getId(), CmmnRestResponseFactory.VARIABLE_PLAN_ITEM, request, response, RestVariableScope.LOCAL,
+                createVariableInterceptor(planItemInstance));
     }
 
-    protected Object createVariable(String instanceId, int variableType, HttpServletRequest request, HttpServletResponse response, RestVariableScope scope) {
-
+    protected Object createVariable(String instanceId, int variableType, HttpServletRequest request, HttpServletResponse response, RestVariableScope scope,
+            VariableInterceptor variableInterceptor) {
         Object result = null;
         if (request instanceof MultipartHttpServletRequest) {
-            result = setBinaryVariable((MultipartHttpServletRequest) request, instanceId, variableType, true, scope);
+            result = setBinaryVariable((MultipartHttpServletRequest) request, instanceId, variableType, true, scope, variableInterceptor);
         } else {
 
             List<RestVariable> inputVariables = new ArrayList<>();
@@ -230,14 +225,23 @@ public class BaseVariableResource implements InitializingBean {
 
                 Object actualVariableValue = restResponseFactory.getVariableValue(var);
                 variablesToSet.put(var.getName(), actualVariableValue);
-                resultVariables.add(restResponseFactory.createRestVariable(var.getName(), actualVariableValue, scope, instanceId, variableType, false));
             }
 
             if (!variablesToSet.isEmpty()) {
+                variableInterceptor.createVariables(variablesToSet);
+                Map<String, Object> setVariables;
                 if (variableType == CmmnRestResponseFactory.VARIABLE_PLAN_ITEM || scope == RestVariableScope.LOCAL) {
                     runtimeService.setLocalVariables(instanceId, variablesToSet);
+                    setVariables = runtimeService.getLocalVariables(instanceId, variablesToSet.keySet());
                 } else {
                     runtimeService.setVariables(instanceId, variablesToSet);
+                    setVariables = runtimeService.getVariables(instanceId, variablesToSet.keySet());
+                }
+
+                for (RestVariable inputVariable : inputVariables) {
+                    String variableName = inputVariable.getName();
+                    Object variableValue = setVariables.get(variableName);
+                    resultVariables.add(restResponseFactory.createRestVariable(variableName, variableValue, scope, instanceId, variableType, false));
                 }
             }
         }
@@ -245,39 +249,39 @@ public class BaseVariableResource implements InitializingBean {
         return result;
     }
     
-    protected List<RestVariable> addVariables(CaseInstance caseInstance, int variableType) {
+    protected List<RestVariable> addVariables(CaseInstance caseInstance) {
         Map<String, Object> rawVariables = runtimeService.getVariables(caseInstance.getId());
-        return restResponseFactory.createRestVariables(rawVariables, caseInstance.getId(), variableType);
+        if (restApiInterceptor != null) {
+            rawVariables = restApiInterceptor.accessCaseInstanceVariables(caseInstance, rawVariables);
+        }
+        return restResponseFactory.createRestVariables(rawVariables, caseInstance.getId(), CmmnRestResponseFactory.VARIABLE_CASE);
     }
     
-    public void deleteAllVariables(CaseInstance caseInstance, HttpServletResponse response) {
+    public void deleteAllVariables(CaseInstance caseInstance) {
         Collection<String> currentVariables = runtimeService.getVariables(caseInstance.getId()).keySet();
+        if (restApiInterceptor != null) {
+            restApiInterceptor.deleteCaseInstanceVariables(caseInstance, currentVariables);
+        }
         runtimeService.removeVariables(caseInstance.getId(), currentVariables);
-
-        response.setStatus(HttpStatus.NO_CONTENT.value());
     }
     
-    protected RestVariable setSimpleVariable(RestVariable restVariable, String instanceId, boolean isNew, RestVariableScope scope, int variableType) {
+    protected RestVariable setSimpleVariable(RestVariable restVariable, String instanceId, boolean isNew, RestVariableScope scope, int variableType, VariableInterceptor variableInterceptor) {
         if (restVariable.getName() == null) {
             throw new FlowableIllegalArgumentException("Variable name is required");
         }
 
         Object actualVariableValue = restResponseFactory.getVariableValue(restVariable);
-        setVariable(instanceId, restVariable.getName(), actualVariableValue, scope, isNew);
 
-        return constructRestVariable(restVariable.getName(), actualVariableValue, instanceId, variableType, false, scope);
+        setVariable(instanceId, restVariable.getName(), actualVariableValue, scope, isNew, variableInterceptor);
+
+        RestVariable variable = getVariableFromRequestWithoutAccessCheck(instanceId, restVariable.getName(), variableType, false);
+        // We are setting the scope because the fetched variable does not have it
+        variable.setVariableScope(scope);
+        return variable;
     }
 
-    protected RestVariable setSimpleVariable(RestVariable restVariable, String instanceId, boolean isNew, int variableType) {
-        return setSimpleVariable(restVariable, instanceId, isNew, RestVariableScope.GLOBAL, variableType);
-    }
-
-    protected RestVariable setBinaryVariable(MultipartHttpServletRequest request, String instanceId, int responseVariableType, boolean isNew) {
-        return setBinaryVariable(request, instanceId, responseVariableType, isNew, RestVariableScope.GLOBAL);
-    }
-    
     protected RestVariable setBinaryVariable(MultipartHttpServletRequest request, String instanceId, int responseVariableType, boolean isNew,
-            RestVariableScope scope) {
+            RestVariableScope scope, VariableInterceptor variableInterceptor) {
 
         // Validate input and set defaults
         if (request.getFileMap().size() == 0) {
@@ -334,20 +338,22 @@ public class BaseVariableResource implements InitializingBean {
             if (variableType.equals(CmmnRestResponseFactory.BYTE_ARRAY_VARIABLE_TYPE)) {
                 // Use raw bytes as variable value
                 byte[] variableBytes = IOUtils.toByteArray(file.getInputStream());
-                setVariable(instanceId, variableName, variableBytes, scope, isNew);
+                setVariable(instanceId, variableName, variableBytes, scope, isNew, variableInterceptor);
 
             } else if (isSerializableVariableAllowed) {
                 // Try deserializing the object
                 ObjectInputStream stream = new ObjectInputStream(file.getInputStream());
                 Object value = stream.readObject();
-                setVariable(instanceId, variableName, value, scope, isNew);
+                setVariable(instanceId, variableName, value, scope, isNew, variableInterceptor);
                 stream.close();
             } else {
                 throw new FlowableContentNotSupportedException("Serialized objects are not allowed");
             }
 
-
-            return restResponseFactory.createBinaryRestVariable(variableName, scope, variableType, instanceId, responseVariableType);
+            RestVariable restVariable = getVariableFromRequestWithoutAccessCheck(instanceId, variableName, responseVariableType, false);
+            // We are setting the scope because the fetched variable does not have it
+            restVariable.setVariableScope(scope);
+            return restVariable;
         } catch (IOException ioe) {
             throw new FlowableIllegalArgumentException("Could not process multipart content", ioe);
         } catch (ClassNotFoundException ioe) {
@@ -356,7 +362,13 @@ public class BaseVariableResource implements InitializingBean {
         }
     }
 
-    protected void setVariable(String instanceId, String name, Object value, RestVariableScope scope, boolean isNew) {
+    protected void setVariable(String instanceId, String name, Object value, RestVariableScope scope, boolean isNew, VariableInterceptor variableInterceptor) {
+        if (isNew) {
+            variableInterceptor.createVariables(Collections.singletonMap(name, value));
+        } else {
+            variableInterceptor.updateVariables(Collections.singletonMap(name, value));
+        }
+
         if (RestVariableScope.LOCAL == scope) {
             //the guard is only added here, because this whole block is new
             if (isNew && runtimeService.hasLocalVariable(instanceId, name)) {
@@ -368,7 +380,65 @@ public class BaseVariableResource implements InitializingBean {
         }
     }
 
-    protected void setVariable(PlanItemInstance planItemInstance, String name, Object value, RestVariableScope scope, boolean isNew) {
-        runtimeService.setVariable(planItemInstance.getCaseInstanceId(), name, value);
+    protected VariableInterceptor createVariableInterceptor(PlanItemInstance planItemInstance) {
+        if (restApiInterceptor != null) {
+            return new VariableInterceptor() {
+
+                @Override
+                public void createVariables(Map<String, Object> variables) {
+                    restApiInterceptor.createPlanItemInstanceVariables(planItemInstance, variables);
+                }
+
+                @Override
+                public void updateVariables(Map<String, Object> variables) {
+                    restApiInterceptor.updatePlanItemInstanceVariables(planItemInstance, variables);
+                }
+            };
+        }
+
+        return NoopVariableInterceptor.INSTANCE;
     }
+
+    protected VariableInterceptor createVariableInterceptor(CaseInstance caseInstance) {
+        if (restApiInterceptor != null) {
+            return new VariableInterceptor() {
+
+                @Override
+                public void createVariables(Map<String, Object> variables) {
+                    restApiInterceptor.createCaseInstanceVariables(caseInstance, variables);
+                }
+
+                @Override
+                public void updateVariables(Map<String, Object> variables) {
+                    restApiInterceptor.updateCaseInstanceVariables(caseInstance, variables);
+                }
+            };
+        }
+
+        return NoopVariableInterceptor.INSTANCE;
+    }
+
+    protected interface VariableInterceptor {
+
+        void createVariables(Map<String, Object> variables);
+
+        void updateVariables(Map<String, Object> variables);
+    }
+
+    protected static class NoopVariableInterceptor implements VariableInterceptor {
+
+        static final VariableInterceptor INSTANCE = new NoopVariableInterceptor();
+
+        @Override
+        public void createVariables(Map<String, Object> variables) {
+            // Nothing to do
+        }
+
+        @Override
+        public void updateVariables(Map<String, Object> variables) {
+            // Nothing to do
+        }
+    }
+
+
 }

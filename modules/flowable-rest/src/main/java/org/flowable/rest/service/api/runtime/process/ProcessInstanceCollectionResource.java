@@ -17,9 +17,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.flowable.common.engine.api.FlowableIllegalArgumentException;
 import org.flowable.common.engine.api.FlowableObjectNotFoundException;
 import org.flowable.common.rest.api.DataResponse;
@@ -104,7 +101,7 @@ public class ProcessInstanceCollectionResource extends BaseProcessInstanceResour
             @ApiResponse(code = 400, message = "Indicates a parameter was passed in the wrong format . The status-message contains additional information.")
     })
     @GetMapping(value = "/runtime/process-instances", produces = "application/json")
-    public DataResponse<ProcessInstanceResponse> getProcessInstances(@ApiParam(hidden = true) @RequestParam Map<String, String> allRequestParams, HttpServletRequest request) {
+    public DataResponse<ProcessInstanceResponse> getProcessInstances(@ApiParam(hidden = true) @RequestParam Map<String, String> allRequestParams) {
         // Populate query based on request
         ProcessInstanceQueryRequest queryRequest = new ProcessInstanceQueryRequest();
 
@@ -209,7 +206,7 @@ public class ProcessInstanceCollectionResource extends BaseProcessInstanceResour
         }
 
         if (allRequestParams.containsKey("withoutTenantId")) {
-            if (Boolean.valueOf(allRequestParams.get("withoutTenantId"))) {
+            if (Boolean.parseBoolean(allRequestParams.get("withoutTenantId"))) {
                 queryRequest.setWithoutTenantId(Boolean.TRUE);
             }
         }
@@ -222,13 +219,15 @@ public class ProcessInstanceCollectionResource extends BaseProcessInstanceResour
             + "Only one of *processDefinitionId*, *processDefinitionKey* or *message* can be used in the request body. \n\n"
             + "Parameters *businessKey*, *variables* and *tenantId* are optional.\n\n "
             + "If tenantId is omitted, the default tenant will be used. More information about the variable format can be found in the REST variables section.\n\n "
-            + "Note that the variable-scope that is supplied is ignored, process-variables are always local.\n\n")
+            + "Note that the variable-scope that is supplied is ignored, process-variables are always local.\n\n",
+            code = 201)
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Indicates the process instance was created."),
             @ApiResponse(code = 400, message = "Indicates either the process-definition was not found (based on id or key), no process is started by sending the given message or an invalid variable has been passed. Status description contains additional information about the error.")
     })
     @PostMapping(value = "/runtime/process-instances", produces = "application/json")
-    public ProcessInstanceResponse createProcessInstance(@RequestBody ProcessInstanceCreateRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public ProcessInstanceResponse createProcessInstance(@RequestBody ProcessInstanceCreateRequest request) {
 
         if (request.getProcessDefinitionId() == null && request.getProcessDefinitionKey() == null && request.getMessage() == null) {
             throw new FlowableIllegalArgumentException("Either processDefinitionId, processDefinitionKey or message is required.");
@@ -250,7 +249,7 @@ public class ProcessInstanceCollectionResource extends BaseProcessInstanceResour
         Map<String, Object> startVariables = null;
         Map<String, Object> transientVariables = null;
         Map<String, Object> startFormVariables = null;
-        if (request.getStartFormVariables() != null && request.getStartFormVariables().size()>0) {
+        if (request.getStartFormVariables() != null && !request.getStartFormVariables().isEmpty()) {
             startFormVariables = new HashMap<>();
             for (RestVariable variable : request.getStartFormVariables()) {
                 if (variable.getName() == null) {
@@ -261,7 +260,7 @@ public class ProcessInstanceCollectionResource extends BaseProcessInstanceResour
             
         } else {
             
-            if (request.getVariables() != null && request.getVariables().size()>0) {
+            if (request.getVariables() != null && !request.getVariables().isEmpty()) {
                 startVariables = new HashMap<>();
                 for (RestVariable variable : request.getVariables()) {
                     if (variable.getName() == null) {
@@ -271,7 +270,7 @@ public class ProcessInstanceCollectionResource extends BaseProcessInstanceResour
                 }
             }
     
-            if (request.getTransientVariables() != null && request.getTransientVariables().size()>0) {
+            if (request.getTransientVariables() != null && !request.getTransientVariables().isEmpty()) {
                 transientVariables = new HashMap<>();
                 for (RestVariable variable : request.getTransientVariables()) {
                     if (variable.getName() == null) {
@@ -305,7 +304,7 @@ public class ProcessInstanceCollectionResource extends BaseProcessInstanceResour
             if (request.isTenantSet()) {
                 processInstanceBuilder.tenantId(request.getTenantId());
             }
-            if (request.getOverrideDefinitionTenantId() != null && request.getOverrideDefinitionTenantId().length() > 0) {
+            if (request.getOverrideDefinitionTenantId() != null && !request.getOverrideDefinitionTenantId().isEmpty()) {
                 processInstanceBuilder.overrideProcessDefinitionTenantId(request.getOverrideDefinitionTenantId());
             }
             if (startFormVariables != null) {
@@ -326,8 +325,6 @@ public class ProcessInstanceCollectionResource extends BaseProcessInstanceResour
             }
 
             instance = processInstanceBuilder.start();
-
-            response.setStatus(HttpStatus.CREATED.value());
 
             ProcessInstanceResponse processInstanceResponse = null;
             if (request.getReturnVariables()) {
@@ -358,7 +355,7 @@ public class ProcessInstanceCollectionResource extends BaseProcessInstanceResour
         }
     }
 
-    @ApiOperation(value = "Bulk delete process instances", tags = { "Process Instances" }, nickname = "deleteProcessInstances")
+    @ApiOperation(value = "Bulk delete process instances", tags = { "Process Instances" }, nickname = "deleteProcessInstances", code = 204)
     @ApiResponses(value = {
             @ApiResponse(code = 204, message = "Indicates the bulk of process instances was found and deleted. Response body is left empty intentionally."),
             @ApiResponse(code = 404, message = "Indicates at least one requested process instance was not found.")

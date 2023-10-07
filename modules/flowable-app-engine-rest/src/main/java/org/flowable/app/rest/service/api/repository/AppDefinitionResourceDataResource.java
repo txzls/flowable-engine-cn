@@ -92,6 +92,7 @@ public class AppDefinitionResourceDataResource {
             } catch (Exception e) {
                 throw new FlowableException("Error converting resource stream", e);
             }
+            
         } else {
             // Resource not found in deployment
             throw new FlowableObjectNotFoundException("Could not find a resource with id '" +

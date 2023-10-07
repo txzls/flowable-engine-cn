@@ -695,6 +695,7 @@ public class HistoricCaseInstanceQueryImpl extends AbstractVariableQueryImpl<His
     }
 
     @Override
+    @Deprecated
     public void deleteWithRelatedData() {
         if (commandExecutor != null) {
             CommandConfig config = new CommandConfig().transactionRequiresNew();
@@ -722,11 +723,6 @@ public class HistoricCaseInstanceQueryImpl extends AbstractVariableQueryImpl<His
         return this;
     }
 
-    @Override
-    public HistoricCaseInstanceQuery limitCaseVariables(Integer historicCaseVariablesLimit) {
-        return this;
-    }
-    
     @Override
     public HistoricCaseInstanceQuery activePlanItemDefinitionId(String planItemDefinitionId) {
         if (planItemDefinitionId == null) {

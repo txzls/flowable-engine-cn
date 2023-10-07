@@ -40,13 +40,13 @@ import org.flowable.cmmn.api.runtime.CaseInstance;
 import org.flowable.cmmn.engine.test.CmmnDeployment;
 import org.flowable.cmmn.rest.service.BaseSpringRestTestCase;
 import org.flowable.cmmn.rest.service.api.CmmnRestUrls;
+import org.flowable.common.engine.api.scope.ScopeTypes;
 import org.flowable.common.engine.impl.interceptor.EngineConfigurationConstants;
 import org.flowable.form.api.FormEngineConfigurationApi;
 import org.flowable.form.api.FormInfo;
 import org.flowable.form.api.FormRepositoryService;
 import org.flowable.form.api.FormService;
 import org.flowable.task.api.Task;
-import org.junit.Test;
 import org.mockito.Mock;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -147,14 +147,14 @@ public class CaseInstanceCollectionResourceTest extends BaseSpringRestTestCase {
         url = CmmnRestUrls.createRelativeResourceUrl(CmmnRestUrls.URL_CASE_INSTANCE_COLLECTION) + "?startedBefore=" + getISODateString(futureCal.getTime());
         assertResultsPresentInDataResponse(url, id);
 
-        url = CmmnRestUrls.createRelativeResourceUrl(CmmnRestUrls.URL_CASE_INSTANCE_COLLECTION) + "?startedBefore=" + getISODateString(historicCal.getTime());;
+        url = CmmnRestUrls.createRelativeResourceUrl(CmmnRestUrls.URL_CASE_INSTANCE_COLLECTION) + "?startedBefore=" + getISODateString(historicCal.getTime());
         assertResultsPresentInDataResponse(url);
         
         // Case instance started after
-        url = CmmnRestUrls.createRelativeResourceUrl(CmmnRestUrls.URL_CASE_INSTANCE_COLLECTION) + "?startedAfter=" + getISODateString(historicCal.getTime());;
+        url = CmmnRestUrls.createRelativeResourceUrl(CmmnRestUrls.URL_CASE_INSTANCE_COLLECTION) + "?startedAfter=" + getISODateString(historicCal.getTime());
         assertResultsPresentInDataResponse(url, id);
 
-        url = CmmnRestUrls.createRelativeResourceUrl(CmmnRestUrls.URL_CASE_INSTANCE_COLLECTION) + "?startedAfter=" + getISODateString(futureCal.getTime());;
+        url = CmmnRestUrls.createRelativeResourceUrl(CmmnRestUrls.URL_CASE_INSTANCE_COLLECTION) + "?startedAfter=" + getISODateString(futureCal.getTime());
         assertResultsPresentInDataResponse(url);
         
         // Case instance state
@@ -615,7 +615,8 @@ public class CaseInstanceCollectionResourceTest extends BaseSpringRestTestCase {
             when(formRepositoryService.getFormModelByKeyAndParentDeploymentId("form1", caseDefinition.getDeploymentId()))
                     .thenReturn(formInfo);
             when(formEngineConfiguration.getFormService()).thenReturn(formEngineFormService);
-            when(formEngineFormService.getVariablesFromFormSubmission(formInfo, Map.of("user", "simple string value", "number", 1234), null))
+            when(formEngineFormService.getVariablesFromFormSubmission(null, "planModel", null, caseDefinition.getId(), ScopeTypes.CMMN, formInfo, 
+                    Map.of("user", "simple string value", "number", 1234), null))
                     .thenReturn(Map.of("user", "simple string value return", "number", 1234L));
 
             HttpPost httpPost = new HttpPost(SERVER_URL_PREFIX + CmmnRestUrls.createRelativeResourceUrl(CmmnRestUrls.URL_CASE_INSTANCE_COLLECTION));
@@ -740,7 +741,6 @@ public class CaseInstanceCollectionResourceTest extends BaseSpringRestTestCase {
     /**
      * Test  bulk deletion of case instances.
      */
-    @Test
     @CmmnDeployment(resources = { "org/flowable/cmmn/rest/service/api/repository/oneHumanTaskCase.cmmn" })
     public void testBulkDeleteCaseInstances() throws Exception {
         CaseInstance caseInstance1 = runtimeService.createCaseInstanceBuilder().caseDefinitionKey("oneHumanTaskCase").start();
@@ -763,7 +763,6 @@ public class CaseInstanceCollectionResourceTest extends BaseSpringRestTestCase {
     /**
      * Test  bulk deletion of case instances.
      */
-    @Test
     @CmmnDeployment(resources = { "org/flowable/cmmn/rest/service/api/repository/oneHumanTaskCase.cmmn" })
     public void testInvalidBulkDeleteCaseInstances() throws Exception {
         CaseInstance caseInstance1 = runtimeService.createCaseInstanceBuilder().caseDefinitionKey("oneHumanTaskCase").start();
@@ -793,7 +792,6 @@ public class CaseInstanceCollectionResourceTest extends BaseSpringRestTestCase {
     /**
      * Test bulk termination of case instances.
      */
-    @Test
     @CmmnDeployment(resources = { "org/flowable/cmmn/rest/service/api/repository/oneHumanTaskCase.cmmn" })
     public void testBulkTerminateCaseInstances() throws Exception {
         CaseInstance caseInstance1 = runtimeService.createCaseInstanceBuilder().caseDefinitionKey("oneHumanTaskCase").start();
@@ -817,7 +815,6 @@ public class CaseInstanceCollectionResourceTest extends BaseSpringRestTestCase {
     /**
      * Test bulk termination of case instances.
      */
-    @Test
     @CmmnDeployment(resources = { "org/flowable/cmmn/rest/service/api/repository/oneHumanTaskCase.cmmn" })
     public void testInvalidBulkTerminateCaseInstances() throws Exception {
         CaseInstance caseInstance1 = runtimeService.createCaseInstanceBuilder().caseDefinitionKey("oneHumanTaskCase").start();

@@ -6,7 +6,7 @@
 
 	<bean id="processEngineConfiguration" class="org.flowable.engine.impl.cfg.StandaloneProcessEngineConfiguration">
 
-		<!-- <property name="jdbcUrl" value="jdbc:mysql://127.0.0.1:3306/activitiunit?characterEncoding=UTF-8" />
+		<!-- <property name="jdbcUrl" value="jdbc:mysql://127.1.0-SNAPSHOT.1:3306/activitiunit?characterEncoding=UTF-8" />
 		<property name="jdbcDriver" value="com.mysql.jdbc.Driver" />
 		<property name="jdbcUsername" value="alfresco" />
 		<property name="jdbcPassword" value="alfresco" /> -->
@@ -34,7 +34,7 @@
 		<property name="mailServers">
 			<map>
 				<entry key="myEmailTenant">
-					<bean class="org.flowable.engine.cfg.MailServerInfo">
+					<bean class="org.flowable.common.engine.impl.cfg.mail.MailServerInfo">
 						<property name="mailServerHost" value="localhost" />
 						<property name="mailServerPort" value="5025" />
 						<property name="mailServerUseSSL" value="false" />

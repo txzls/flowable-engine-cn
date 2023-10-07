@@ -19,13 +19,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.flowable.cmmn.api.runtime.CaseInstance;
-import org.flowable.cmmn.rest.service.api.CmmnRestResponseFactory;
 import org.flowable.cmmn.rest.service.api.engine.variable.RestVariable;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.annotations.Api;
@@ -51,10 +52,10 @@ public class CaseInstanceVariableCollectionResource extends BaseVariableResource
             @ApiResponse(code = 400, message = "Indicates the requested case instance was not found.")
     })
     @GetMapping(value = "/cmmn-runtime/case-instances/{caseInstanceId}/variables", produces = "application/json")
-    public List<RestVariable> getVariables(@ApiParam(name = "caseInstanceId") @PathVariable String caseInstanceId, HttpServletRequest request) {
+    public List<RestVariable> getVariables(@ApiParam(name = "caseInstanceId") @PathVariable String caseInstanceId) {
 
         CaseInstance caseInstance = getCaseInstanceFromRequest(caseInstanceId);
-        return processCaseVariables(caseInstance, CmmnRestResponseFactory.VARIABLE_CASE);
+        return processCaseVariables(caseInstance);
     }
 
     @ApiOperation(value = "Update a multiple/single (non)binary variable on a case instance", tags = { "Case Instance Variables" }, nickname = "createOrUpdateCaseVariable",
@@ -83,8 +84,8 @@ public class CaseInstanceVariableCollectionResource extends BaseVariableResource
     @PutMapping(value = "/cmmn-runtime/case-instances/{caseInstanceId}/variables", produces = "application/json", consumes = {"application/json", "multipart/form-data"})
     public Object createOrUpdateExecutionVariable(@ApiParam(name = "caseInstanceId") @PathVariable String caseInstanceId, HttpServletRequest request, HttpServletResponse response) {
 
-        CaseInstance caseInstance = getCaseInstanceFromRequest(caseInstanceId);
-        return createVariable(caseInstance, CmmnRestResponseFactory.VARIABLE_CASE, request, response);
+        CaseInstance caseInstance = getCaseInstanceFromRequestWithoutAccessCheck(caseInstanceId);
+        return createVariable(caseInstance, request, response);
     }
 
     @ApiOperation(value = "Create variables or new binary variable on a case instance", tags = { "Case Instance Variables" }, nickname = "createCaseInstanceVariable",
@@ -113,18 +114,19 @@ public class CaseInstanceVariableCollectionResource extends BaseVariableResource
     
     @PostMapping(value = "/cmmn-runtime/case-instances/{caseInstanceId}/variables", produces = "application/json", consumes = {"application/json", "multipart/form-data", "text/plain"})
     public Object createExecutionVariable(@ApiParam(name = "caseInstanceId") @PathVariable String caseInstanceId, HttpServletRequest request, HttpServletResponse response) {
-        CaseInstance caseInstance = getCaseInstanceFromRequest(caseInstanceId);
-        return createVariable(caseInstance, CmmnRestResponseFactory.VARIABLE_CASE, request, response);
+        CaseInstance caseInstance = getCaseInstanceFromRequestWithoutAccessCheck(caseInstanceId);
+        return createVariable(caseInstance, request, response);
     }
 
-    @ApiOperation(value = "Delete all variables", tags = { "Case Instance Variables" }, nickname = "deleteCaseVariable")
+    @ApiOperation(value = "Delete all variables", tags = { "Case Instance Variables" }, nickname = "deleteCaseVariable", code = 204)
     @ApiResponses(value = {
             @ApiResponse(code = 204, message = "Indicates variables were found and have been deleted. Response-body is intentionally empty."),
             @ApiResponse(code = 404, message = "Indicates the requested case instance was not found.")
     })
     @DeleteMapping(value = "/cmmn-runtime/case-instances/{caseInstanceId}/variables")
-    public void deleteLocalVariables(@ApiParam(name = "caseInstanceId") @PathVariable String caseInstanceId, HttpServletResponse response) {
-        CaseInstance caseInstance = getCaseInstanceFromRequest(caseInstanceId);
-        deleteAllVariables(caseInstance, response);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteLocalVariables(@ApiParam(name = "caseInstanceId") @PathVariable String caseInstanceId) {
+        CaseInstance caseInstance = getCaseInstanceFromRequestWithoutAccessCheck(caseInstanceId);
+        deleteAllVariables(caseInstance);
     }
 }

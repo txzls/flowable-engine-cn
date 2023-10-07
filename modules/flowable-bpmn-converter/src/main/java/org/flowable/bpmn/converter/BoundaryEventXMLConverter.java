@@ -123,6 +123,7 @@ public class BoundaryEventXMLConverter extends BaseBpmnXMLConverter {
     @Override
     protected boolean writeExtensionChildElements(BaseElement element, boolean didWriteExtensionStartElement, XMLStreamWriter xtw) throws Exception {
         BoundaryEvent boundaryEvent = (BoundaryEvent) element;
+        didWriteExtensionStartElement = BpmnXMLUtil.writeIOParameters(ELEMENT_IN_PARAMETERS, boundaryEvent.getInParameters(), didWriteExtensionStartElement, xtw);
         didWriteExtensionStartElement = writeVariableListenerDefinition(boundaryEvent, didWriteExtensionStartElement, xtw);        
         return didWriteExtensionStartElement;
     }

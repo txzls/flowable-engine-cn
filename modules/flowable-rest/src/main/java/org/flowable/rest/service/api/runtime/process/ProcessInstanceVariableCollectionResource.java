@@ -23,12 +23,14 @@ import org.flowable.engine.runtime.Execution;
 import org.flowable.rest.service.api.RestResponseFactory;
 import org.flowable.rest.service.api.engine.variable.RestVariable;
 import org.flowable.rest.service.api.engine.variable.RestVariable.RestVariableScope;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 import io.swagger.annotations.Api;
@@ -47,6 +49,10 @@ import io.swagger.annotations.Authorization;
 @Api(tags = { "Process Instance Variables" }, description = "Manage Process Instances Variables", authorizations = { @Authorization(value = "basicAuth") })
 public class ProcessInstanceVariableCollectionResource extends BaseVariableCollectionResource {
 
+    public ProcessInstanceVariableCollectionResource() {
+        super(RestResponseFactory.VARIABLE_PROCESS);
+    }
+
     @ApiOperation(value = "List variables for a process instance", nickname="listProcessInstanceVariables", tags = {"Process Instance Variables" },
             notes = "In case the variable is a binary variable or serializable, the valueUrl points to an URL to fetch the raw value. If it’s a plain variable, the value is present in the response. Note that only local scoped variables are returned, as there is no global scope for process-instance variables.")
     @ApiResponses(value = {
@@ -54,10 +60,10 @@ public class ProcessInstanceVariableCollectionResource extends BaseVariableColle
             @ApiResponse(code = 400, message = "Indicates the requested process instance was not found.")
     })
     @GetMapping(value = "/runtime/process-instances/{processInstanceId}/variables", produces = "application/json")
-    public List<RestVariable> getVariables(@ApiParam(name = "processInstanceId") @PathVariable String processInstanceId, @RequestParam(value = "scope", required = false) String scope, HttpServletRequest request) {
+    public List<RestVariable> getVariables(@ApiParam(name = "processInstanceId") @PathVariable String processInstanceId, @RequestParam(value = "scope", required = false) String scope) {
 
-        Execution execution = getProcessInstanceFromRequest(processInstanceId);
-        return processVariables(execution, scope, RestResponseFactory.VARIABLE_PROCESS);
+        Execution execution = getExecutionFromRequestWithoutAccessCheck(processInstanceId);
+        return processVariables(execution, scope);
     }
 
     // FIXME OASv3 to solve Multiple Endpoint issue
@@ -87,8 +93,8 @@ public class ProcessInstanceVariableCollectionResource extends BaseVariableColle
     @PutMapping(value = "/runtime/process-instances/{processInstanceId}/variables", produces = "application/json", consumes = {"application/json", "multipart/form-data"})
     public Object createOrUpdateExecutionVariable(@ApiParam(name = "processInstanceId") @PathVariable String processInstanceId, HttpServletRequest request, HttpServletResponse response) {
 
-        Execution execution = getProcessInstanceFromRequest(processInstanceId);
-        return createExecutionVariable(execution, true, RestResponseFactory.VARIABLE_PROCESS, request, response);
+        Execution execution = getExecutionFromRequestWithoutAccessCheck(processInstanceId);
+        return createExecutionVariable(execution, true, request, response);
     }
 
     // FIXME OASv3 to solve Multiple Endpoint issue
@@ -118,31 +124,32 @@ public class ProcessInstanceVariableCollectionResource extends BaseVariableColle
     @PostMapping(value = "/runtime/process-instances/{processInstanceId}/variables", produces = "application/json", consumes = {"application/json", "multipart/form-data"})
     public Object createExecutionVariable(@ApiParam(name = "processInstanceId") @PathVariable String processInstanceId, HttpServletRequest request, HttpServletResponse response) {
 
-        Execution execution = getProcessInstanceFromRequest(processInstanceId);
-        return createExecutionVariable(execution, false, RestResponseFactory.VARIABLE_PROCESS, request, response);
+        Execution execution = getExecutionFromRequestWithoutAccessCheck(processInstanceId);
+        return createExecutionVariable(execution, false, request, response);
     }
 
     // FIXME Documentation
-    @ApiOperation(value = "Delete all variables", tags = { "Process Instance Variables" }, nickname = "deleteLocalProcessVariable")
+    @ApiOperation(value = "Delete all variables", tags = { "Process Instance Variables" }, nickname = "deleteLocalProcessVariable", code = 204)
     @ApiResponses(value = {
             @ApiResponse(code = 204, message = "Indicates variables were found and have been deleted. Response-body is intentionally empty."),
             @ApiResponse(code = 404, message = "Indicates the requested process instance was not found.")
     })
     @DeleteMapping(value = "/runtime/process-instances/{processInstanceId}/variables")
-    public void deleteLocalVariables(@ApiParam(name = "processInstanceId") @PathVariable String processInstanceId, HttpServletResponse response) {
-        Execution execution = getProcessInstanceFromRequest(processInstanceId);
-        deleteAllLocalVariables(execution, response);
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteLocalVariables(@ApiParam(name = "processInstanceId") @PathVariable String processInstanceId) {
+        Execution execution = getExecutionFromRequestWithoutAccessCheck(processInstanceId);
+        deleteAllLocalVariables(execution);
     }
 
     @Override
-    protected void addGlobalVariables(Execution execution, int variableType, Map<String, RestVariable> variableMap) {
+    protected void addGlobalVariables(Execution execution, Map<String, RestVariable> variableMap) {
         // no global variables
     }
 
     // For process instance there's only one scope. Using the local variables
     // method for that
     @Override
-    protected void addLocalVariables(Execution execution, int variableType, Map<String, RestVariable> variableMap) {
+    protected void addLocalVariables(Execution execution, Map<String, RestVariable> variableMap) {
         Map<String, Object> rawVariables = runtimeService.getVariables(execution.getId());
         List<RestVariable> globalVariables = restResponseFactory.createRestVariables(rawVariables, execution.getId(), variableType, RestVariableScope.LOCAL);
 

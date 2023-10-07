@@ -13,8 +13,9 @@
 
 package org.flowable.cmmn.rest.service.api.runtime.caze;
 
+import java.util.Collections;
+
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 import org.flowable.cmmn.api.runtime.CaseInstance;
 import org.flowable.cmmn.rest.service.api.CmmnRestResponseFactory;
@@ -29,6 +30,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 
@@ -60,10 +62,10 @@ public class CaseInstanceVariableResource extends BaseVariableResource {
     })
     @GetMapping(value = "/cmmn-runtime/case-instances/{caseInstanceId}/variables/{variableName}", produces = "application/json")
     public RestVariable getVariable(@ApiParam(name = "caseInstanceId") @PathVariable("caseInstanceId") String caseInstanceId, @ApiParam(name = "variableName") @PathVariable("variableName") String variableName,
-            @RequestParam(value = "scope", required = false) String scope, HttpServletRequest request) {
+            @RequestParam(value = "scope", required = false) String scope) {
 
-        CaseInstance caseInstance = getCaseInstanceFromRequest(caseInstanceId);
-        return getVariableFromRequest(caseInstance, variableName, CmmnRestResponseFactory.VARIABLE_CASE, false);
+        CaseInstance caseInstance = getCaseInstanceFromRequestWithoutAccessCheck(caseInstanceId);
+        return getVariableFromRequest(caseInstance, variableName, false);
     }
 
     @ApiOperation(value = "Update a single variable on a case instance", tags = { "Case Instance Variables" }, nickname = "updateCaseInstanceVariable",
@@ -89,11 +91,12 @@ public class CaseInstanceVariableResource extends BaseVariableResource {
     public RestVariable updateVariable(@ApiParam(name = "caseInstanceId") @PathVariable("caseInstanceId") String caseInstanceId, @ApiParam(name = "variableName") @PathVariable("variableName") String variableName,
             HttpServletRequest request) {
 
-        CaseInstance caseInstance = getCaseInstanceFromRequest(caseInstanceId);
+        CaseInstance caseInstance = getCaseInstanceFromRequestWithoutAccessCheck(caseInstanceId);
 
         RestVariable result = null;
         if (request instanceof MultipartHttpServletRequest) {
-            result = setBinaryVariable((MultipartHttpServletRequest) request, caseInstance.getId(), CmmnRestResponseFactory.VARIABLE_CASE, false);
+            result = setBinaryVariable((MultipartHttpServletRequest) request, caseInstance.getId(), CmmnRestResponseFactory.VARIABLE_CASE, false,
+                    RestVariable.RestVariableScope.GLOBAL, createVariableInterceptor(caseInstance));
 
             if (!result.getName().equals(variableName)) {
                 throw new FlowableIllegalArgumentException("Variable name in the body should be equal to the name used in the requested URL.");
@@ -114,29 +117,32 @@ public class CaseInstanceVariableResource extends BaseVariableResource {
                 throw new FlowableIllegalArgumentException("Variable name in the body should be equal to the name used in the requested URL.");
             }
 
-            result = setSimpleVariable(restVariable, caseInstance.getId(), false, CmmnRestResponseFactory.VARIABLE_CASE);
+            result = setSimpleVariable(restVariable, caseInstance.getId(), false, RestVariable.RestVariableScope.GLOBAL, CmmnRestResponseFactory.VARIABLE_CASE, createVariableInterceptor(caseInstance));
         }
         return result;
     }
 
-    @ApiOperation(value = "Delete a variable", tags = { "Case Instance Variables" }, nickname = "deleteCaseInstanceVariable")
+    @ApiOperation(value = "Delete a variable", tags = { "Case Instance Variables" }, nickname = "deleteCaseInstanceVariable", code = 204)
     @ApiResponses(value = {
             @ApiResponse(code = 204, message = "Indicates the variable was found and has been deleted. Response-body is intentionally empty."),
             @ApiResponse(code = 404, message = "Indicates the requested variable was not found.")
     })
     @DeleteMapping(value = "/cmmn-runtime/case-instances/{caseInstanceId}/variables/{variableName}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteVariable(@ApiParam(name = "caseInstanceId") @PathVariable("caseInstanceId") String caseInstanceId, @ApiParam(name = "variableName") @PathVariable("variableName") String variableName,
-            @RequestParam(value = "scope", required = false) String scope, HttpServletResponse response) {
+            @RequestParam(value = "scope", required = false) String scope) {
 
-        CaseInstance caseInstance = getCaseInstanceFromRequest(caseInstanceId);
+        CaseInstance caseInstance = getCaseInstanceFromRequestWithoutAccessCheck(caseInstanceId);
         
         boolean hasVariable = runtimeService.hasVariable(caseInstance.getId(), variableName);
         if (!hasVariable) {
             throw new FlowableObjectNotFoundException("Could not find a variable with name '" + variableName + "'.");
         }
         
+        if (restApiInterceptor != null) {
+            restApiInterceptor.deleteCaseInstanceVariables(caseInstance, Collections.singleton(variableName));
+        }
+
         runtimeService.removeVariable(caseInstance.getId(), variableName);
-        
-        response.setStatus(HttpStatus.NO_CONTENT.value());
     }
 }

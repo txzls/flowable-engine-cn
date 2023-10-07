@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import org.apache.commons.lang3.StringUtils;
+import org.flowable.cmmn.api.history.HistoricMilestoneInstance;
 import org.flowable.cmmn.api.history.HistoricPlanItemInstance;
 import org.flowable.cmmn.api.repository.CaseDefinition;
 import org.flowable.cmmn.engine.CmmnEngineConfiguration;
@@ -303,6 +304,7 @@ public class DefaultCmmnHistoryManager implements CmmnHistoryManager {
             HistoricPlanItemInstanceEntity historicPlanItemInstanceEntity = historicPlanItemInstanceEntityManager.findById(planItemInstanceEntity.getId());
             if (historicPlanItemInstanceEntity != null) {
                 historicPlanItemInstanceEntity.setFormKey(planItemInstanceEntity.getFormKey());
+                historicPlanItemInstanceEntity.setElementId(planItemInstanceEntity.getElementId());
             }
         }
     }
@@ -423,6 +425,18 @@ public class DefaultCmmnHistoryManager implements CmmnHistoryManager {
                     HistoricPlanItemInstanceEntity planItemEntity = (HistoricPlanItemInstanceEntity) historicPlanItemInstance;
                     planItemEntity.setCaseDefinitionId(caseDefinition.getId());
                     historicPlanItemInstanceEntityManager.update(planItemEntity);
+                }
+            }
+            
+            HistoricMilestoneInstanceQueryImpl historicMilestoneInstanceQuery = new HistoricMilestoneInstanceQueryImpl();
+            historicMilestoneInstanceQuery.milestoneInstanceCaseInstanceId(caseInstance.getId());
+            HistoricMilestoneInstanceEntityManager historicMilestoneInstanceEntityManager = cmmnEngineConfiguration.getHistoricMilestoneInstanceEntityManager();
+            List<HistoricMilestoneInstance> historicMilestoneInstances = historicMilestoneInstanceEntityManager.findHistoricMilestoneInstancesByQueryCriteria(historicMilestoneInstanceQuery);
+            if (historicMilestoneInstances != null) {
+                for (HistoricMilestoneInstance historicMilestoneInstance : historicMilestoneInstances) {
+                    HistoricMilestoneInstanceEntity milestoneEntity = (HistoricMilestoneInstanceEntity) historicMilestoneInstance;
+                    milestoneEntity.setCaseDefinitionId(caseDefinition.getId());
+                    historicMilestoneInstanceEntityManager.update(milestoneEntity);
                 }
             }
         }

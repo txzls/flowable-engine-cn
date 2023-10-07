@@ -168,6 +168,15 @@ public abstract class MultiInstanceActivityBehavior extends FlowNodeActivityBeha
     
     @Override
     public void leave(DelegateExecution execution) {
+        DelegateExecution rootExecution = null;
+        try {
+            rootExecution = getMultiInstanceRootExecution(execution);
+            CommandContextUtil.getProcessEngineConfiguration().getListenerNotificationHelper()
+                    .executeExecutionListeners(activity, rootExecution, ExecutionListener.EVENTNAME_END);
+        } catch (BpmnError error) {
+            ErrorPropagation.propagateError(error, rootExecution);
+            return;
+        }
         cleanupMiRoot(execution);
     }
 
@@ -197,8 +206,9 @@ public abstract class MultiInstanceActivityBehavior extends FlowNodeActivityBeha
 
                     Integer elementIndexValue = getLoopVariable(childExecution, getCollectionElementIndexVariable());
                     String counterValue = aggregatedVarInstance.getId() + COUNTER_VAR_VALUE_SEPARATOR + elementIndexValue;
-                    VariableInstanceEntity counterVarInstance = createScopedVariableAggregationVariableInstance(COUNTER_VAR_PREFIX + targetVarName,
-                            aggregatedVarInstance.getScopeId(), aggregatedVarInstance.getSubScopeId(), counterValue, variableServiceConfiguration);
+                    VariableInstanceEntity counterVarInstance = createScopedVariableAggregationVariableInstance(childExecution.getTenantId(),
+                            COUNTER_VAR_PREFIX + targetVarName, aggregatedVarInstance.getScopeId(), aggregatedVarInstance.getSubScopeId(), counterValue,
+                            variableServiceConfiguration);
                     variableService.insertVariableInstance(counterVarInstance);
                 }
             }
@@ -584,7 +594,7 @@ public abstract class MultiInstanceActivityBehavior extends FlowNodeActivityBeha
         if (LOGGER.isDebugEnabled()) {
             LOGGER.debug("Multi-instance '{}' {}. Details: loopCounter={}, nrOrCompletedInstances={},nrOfActiveInstances={},nrOfInstances={}",
                     execution.getCurrentFlowElement() != null ? execution.getCurrentFlowElement().getId() : "", custom, loopCounter,
-                    nrOfCompletedInstances, nrOfActiveInstances, nrOfInstances, execution);
+                    nrOfCompletedInstances, nrOfActiveInstances, nrOfInstances);
         }
     }
 

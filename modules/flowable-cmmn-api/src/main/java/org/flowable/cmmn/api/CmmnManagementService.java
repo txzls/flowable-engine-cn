@@ -361,6 +361,21 @@ public interface CmmnManagementService {
     CmmnExternalWorkerTransitionBuilder createCmmnExternalWorkerTransitionBuilder(String externalJobId, String workerId);
 
     /**
+     * Unaquire a locked external worker job.
+     */
+    void unacquireExternalWorkerJob(String jobId, String workerId);
+    
+    /**
+     * Unaquire all locked external worker jobs for worker.
+     */
+    void unacquireAllExternalWorkerJobsForWorker(String workerId);
+    
+    /**
+     * Unaquire all locked external worker jobs for worker and tenant.
+     */
+    void unacquireAllExternalWorkerJobsForWorker(String workerId, String tenantId);
+    
+    /**
      * Create a {@link ChangeTenantIdBuilder} that can be used to change the tenant id of the case instances
      * and all the related instances. See {@link CmmnChangeTenantIdEntityTypes} for related instances.
      * <p>

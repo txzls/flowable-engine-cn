@@ -11,7 +11,7 @@
         <groupId>org.flowable</groupId>
         <artifactId>flowable-spring-boot</artifactId>
         <relativePath>../flowable-spring-boot/pom.xml</relativePath>
-        <version>7.0.0-SNAPSHOT</version>
+        <version>7.1.0-SNAPSHOT</version>
     </parent>
 
     <properties>
@@ -151,9 +151,8 @@
                     <plugin>
                         <groupId>com.github.kongchen</groupId>
                         <artifactId>swagger-maven-plugin</artifactId>
-                        <version>3.1.6</version>
+                        <version>3.1.8</version>
                         <configuration>
-                            <skipSwaggerGeneration>true</skipSwaggerGeneration>
                             <apiSources>
                                 <apiSource>
                                     <springmvc>true</springmvc>
@@ -420,6 +419,25 @@
                                 </apiSource>
                             </apiSources>
                         </configuration>
+                        <dependencies>
+                            <!-- Swagger uses javax XML Bind, so add that in order for everything to work properly -->
+                            <dependency>
+                                <groupId>javax.xml.bind</groupId>
+                                <artifactId>jaxb-api</artifactId>
+                                <version>2.3.1</version>
+                            </dependency>
+                            <!-- The swagger Maven plugin uses older Spring version. Use the same version in order to avoid problems -->
+                            <dependency>
+                                <groupId>org.springframework</groupId>
+                                <artifactId>spring-web</artifactId>
+                                <version>${spring.framework.version}</version>
+                            </dependency>
+                            <dependency>
+                                <groupId>org.springframework</groupId>
+                                <artifactId>spring-context</artifactId>
+                                <version>${spring.framework.version}</version>
+                            </dependency>
+                        </dependencies>
                         <executions>
                             <execution>
                                 <phase>generate-resources</phase>
@@ -509,7 +527,7 @@
                         <configuration>
                             <arguments>
                                 <argument>--spring.datasource.driver-class-name=com.mysql.jdbc.Driver</argument>
-                                <argument>--spring.datasource.url=jdbc:mysql://127.0.0.1:3306/flowable?characterEncoding=UTF-8</argument>
+                                <argument>--spring.datasource.url=jdbc:mysql://127.1.0-SNAPSHOT.1:3306/flowable?characterEncoding=UTF-8</argument>
                                 <argument>--spring.datasource.username=flowable</argument>
                                 <argument>--spring.datasource.password=flowable</argument>
                             </arguments>

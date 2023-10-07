@@ -11,7 +11,7 @@
         <groupId>org.flowable</groupId>
         <artifactId>flowable-root</artifactId>
         <relativePath>../..</relativePath>
-        <version>7.0.0-SNAPSHOT</version>
+        <version>7.1.0-SNAPSHOT</version>
     </parent>
 
     <dependencies>
@@ -154,9 +154,9 @@
             junit*;resolution:=optional,
             org.junit*;resolution:=optional,
             com.sun*;resolution:=optional,
-            javax.activation*;resolution:=optional,
+            jakarta.activation*;resolution:=optional,
             jakarta.persistence*;resolution:=optional,
-            org.apache.commons.mail*;resolution:=optional,
+            jakarta.mail*;resolution:=optional,
             org.apache.xerces*;resolution:=optional,
             org.springframework*;resolution:=optional,
             com.fasterxml*;resolution:=optional,

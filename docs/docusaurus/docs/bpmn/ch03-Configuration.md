@@ -356,7 +356,7 @@ The managed implementations fall back to their default counterparts if the threa
 
 ## Job executor activation
 
-The AsyncExecutor is a component that manages a thread pool to fire timers and other asynchronous tasks. Other implementations are possible (for example using a message queue, see the advanced section of the user guide).
+The AsyncExecutor is a component that manages a thread pool to fire timers and other asynchronous tasks.
 
 By default, the AsyncExecutor is not activated and not started. With the following configuration the async executor can be started together with the Flowable Engine.
 
@@ -370,16 +370,9 @@ Configuring a mail server is optional. Flowable supports sending e-mails in busi
 
 ## History configuration
 
-Customizing the configuration of history storage is optional. This allows you to tweak settings that influence the [history capabilities](bpmn/ch11-History.md#history) of the engine. See [history configuration](bpmn/ch11-History.md#history-configuration) for more details.
+Customizing the configuration of history storage is optional. This allows you to tweak settings that influence the [history capabilities](bpmn/ch10-History.md#history) of the engine. See [history configuration](bpmn/ch10-History.md#history-configuration) for more details.
 
     <property name="history" value="audit" />
-
-## Async history configuration
-
-\[Experimental\] Since Flowable 6.1.0 the async history feature has been added. When async history is enabled, the historic data will be persisted by a history job executor, instead of synchronous persistence as part of the runtime execution persistence.
-See [async history configuration](bpmn/ch11-History.md#async-history-configuration) for more details.
-
-    <property name="asyncHistoryEnabled" value="true" />
 
 ## Exposing configuration beans in expressions and scripts
 

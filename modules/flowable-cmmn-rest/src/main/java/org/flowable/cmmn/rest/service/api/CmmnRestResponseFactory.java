@@ -21,7 +21,6 @@ import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.http.entity.ContentType;
 import org.flowable.cmmn.api.history.HistoricCaseInstance;
 import org.flowable.cmmn.api.history.HistoricMilestoneInstance;
 import org.flowable.cmmn.api.history.HistoricPlanItemInstance;
@@ -76,6 +75,8 @@ import org.flowable.identitylink.api.IdentityLink;
 import org.flowable.identitylink.api.history.HistoricIdentityLink;
 import org.flowable.job.api.HistoryJob;
 import org.flowable.job.api.Job;
+import org.flowable.job.service.impl.persistence.entity.HistoryJobEntity;
+import org.flowable.job.service.impl.persistence.entity.JobInfoEntity;
 import org.flowable.task.api.Task;
 import org.flowable.task.api.history.HistoricTaskInstance;
 import org.flowable.variable.api.history.HistoricVariableInstance;
@@ -181,12 +182,7 @@ public class CmmnRestResponseFactory {
         // Add additional metadata to the artifact-strings before returning
         List<DeploymentResourceResponse> responseList = new ArrayList<>(resourceList.size());
         for (String resourceId : resourceList) {
-            String contentType = null;
-            if (resourceId.toLowerCase().endsWith(".cmmn")) {
-                contentType = ContentType.TEXT_XML.getMimeType();
-            } else {
-                contentType = contentTypeResolver.resolveContentType(resourceId);
-            }
+            String contentType = contentTypeResolver.resolveContentType(resourceId);
             responseList.add(createDeploymentResourceResponse(deploymentId, resourceId, contentType, urlBuilder));
         }
         return responseList;
@@ -961,32 +957,66 @@ public class CmmnRestResponseFactory {
 
         return formDefinitionResponse;
     }
-
+    
     public List<JobResponse> createJobResponseList(List<Job> jobs) {
+        return createJobResponseList(jobs, CmmnRestUrls.URL_JOB);
+    }
+
+    public List<JobResponse> createTimerJobResponseList(List<Job> jobs) {
+        return createJobResponseList(jobs, CmmnRestUrls.URL_TIMER_JOB);
+    }
+
+    public List<JobResponse> createSuspendedJobResponseList(List<Job> jobs) {
+        return createJobResponseList(jobs, CmmnRestUrls.URL_SUSPENDED_JOB);
+    }
+
+    public List<JobResponse> createDeadLetterJobResponseList(List<Job> jobs) {
+        return createJobResponseList(jobs, CmmnRestUrls.URL_DEADLETTER_JOB);
+    }
+
+    public List<JobResponse> createJobResponseList(List<Job> jobs, String[] urlJobSegments) {
         RestUrlBuilder urlBuilder = createUrlBuilder();
         List<JobResponse> responseList = new ArrayList<>(jobs.size());
         for (Job instance : jobs) {
-            responseList.add(createJobResponse(instance, urlBuilder));
+            responseList.add(createJobResponse(instance, urlBuilder, urlJobSegments));
         }
         return responseList;
     }
-
+    
     public JobResponse createJobResponse(Job job) {
-        return createJobResponse(job, createUrlBuilder());
+        return createJobResponse(job, createUrlBuilder(), CmmnRestUrls.URL_JOB);
+    }
+    
+    public JobResponse createTimerJobResponse(Job job) {
+        return createJobResponse(job, createUrlBuilder(), CmmnRestUrls.URL_TIMER_JOB);
     }
 
-    public JobResponse createJobResponse(Job job, RestUrlBuilder urlBuilder) {
+    public JobResponse createSuspendedJobResponse(Job job) {
+        return createJobResponse(job, createUrlBuilder(), CmmnRestUrls.URL_SUSPENDED_JOB);
+    }
+
+    public JobResponse createDeadLetterJobResponse(Job job) {
+        return createJobResponse(job, createUrlBuilder(), CmmnRestUrls.URL_DEADLETTER_JOB);
+    }
+
+    public JobResponse createJobResponse(Job job, RestUrlBuilder urlBuilder, String[] urlJobSegments) {
         JobResponse response = new JobResponse();
         response.setId(job.getId());
         response.setDueDate(job.getDuedate());
         response.setExceptionMessage(job.getExceptionMessage());
         response.setRetries(job.getRetries());
         response.setCreateTime(job.getCreateTime());
+        if (job instanceof JobInfoEntity) {
+            JobInfoEntity jobInfoEntity = (JobInfoEntity) job;
+            response.setLockOwner(jobInfoEntity.getLockOwner());
+            response.setLockExpirationTime(jobInfoEntity.getLockExpirationTime());
+        }
         response.setTenantId(job.getTenantId());
         response.setElementId(job.getElementId());
         response.setElementName(job.getElementName());
+        response.setHandlerType(job.getJobHandlerType());
 
-        response.setUrl(urlBuilder.buildUrl(CmmnRestUrls.URL_JOB, job.getId()));
+        response.setUrl(urlBuilder.buildUrl(urlJobSegments, job.getId()));
 
         if (ScopeTypes.CMMN.equals(job.getScopeType())) {
             if (job.getScopeDefinitionId() != null) {
@@ -1030,6 +1060,11 @@ public class CmmnRestResponseFactory {
         response.setJobHandlerType(job.getJobHandlerType());
         response.setJobHandlerConfiguration(job.getJobHandlerConfiguration());
         response.setCustomValues(job.getCustomValues());
+        if (job instanceof HistoryJobEntity) {
+            HistoryJobEntity historyJobEntity = (HistoryJobEntity) job;
+            response.setLockOwner(historyJobEntity.getLockOwner());
+            response.setLockExpirationTime(historyJobEntity.getLockExpirationTime());
+        }
         response.setTenantId(job.getTenantId());
 
         response.setUrl(urlBuilder.buildUrl(CmmnRestUrls.URL_HISTORY_JOB, job.getId()));

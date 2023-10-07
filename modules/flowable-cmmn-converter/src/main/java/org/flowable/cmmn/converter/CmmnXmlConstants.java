@@ -118,6 +118,7 @@ public interface CmmnXmlConstants {
     String ATTRIBUTE_IS_ASYNCHRONOUS = "async";
     String ATTRIBUTE_IS_EXCLUSIVE = "exclusive";
     String ATTRIBUTE_IS_ASYNCHRONOUS_LEAVE = "asyncLeave";
+    String ATTRIBUTE_IS_ASYNCHRONOUS_LEAVE_EXCLUSIVE = "asyncLeaveExclusive";
     String ATTRIBUTE_STORE_RESULT_AS_TRANSIENT = "storeResultVariableAsTransient";
 
     String ATTRIBUTE_EXTERNAL_WORKER_TOPIC = "topic";
@@ -195,6 +196,7 @@ public interface CmmnXmlConstants {
     String ATTRIBUTE_DUE_DATE = "dueDate";
     String ATTRIBUTE_CATEGORY = "category";
     String ATTRIBUTE_TASK_ID_VARIABLE_NAME = "taskIdVariableName";
+    String ATTRIBUTE_TASK_COMPLETER_VARIABLE_NAME = "taskCompleterVariableName";
 
     String ATTRIBUTE_REPETITION_COUNTER_VARIABLE_NAME = "counterVariable";
     String ATTRIBUTE_REPETITION_MAX_INSTANCE_COUNT_NAME = "maxInstanceCount";

@@ -27,6 +27,7 @@ public interface CaseInstanceQuery extends Query<CaseInstanceQuery, CaseInstance
     CaseInstanceQuery caseDefinitionKey(String caseDefinitionKey);
     CaseInstanceQuery caseDefinitionKeys(Set<String> caseDefinitionKeys);
     CaseInstanceQuery caseDefinitionId(String caseDefinitionId);
+    CaseInstanceQuery caseDefinitionIds(Set<String> caseDefinitionIds);
     CaseInstanceQuery caseDefinitionCategory(String caseDefinitionCategory);
     CaseInstanceQuery caseDefinitionName(String caseDefinitionName);
     CaseInstanceQuery caseDefinitionVersion(Integer caseDefinitionVersion);
@@ -232,13 +233,6 @@ public interface CaseInstanceQuery extends Query<CaseInstanceQuery, CaseInstance
      * End an OR statement.
      */
     CaseInstanceQuery endOr();
-
-    /**
-     * Limit case instance variables
-     * @deprecated no longer needed, this is a noop
-     */
-    @Deprecated
-    CaseInstanceQuery limitCaseInstanceVariables(Integer caseInstanceVariablesLimit);
 
     /**
      * Localize case name to specified locale.

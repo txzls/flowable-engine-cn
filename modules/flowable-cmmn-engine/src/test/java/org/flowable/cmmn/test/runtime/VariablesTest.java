@@ -14,9 +14,11 @@ package org.flowable.cmmn.test.runtime;
 
 import static java.util.stream.Collectors.toMap;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.entry;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +35,8 @@ import org.flowable.cmmn.api.delegate.PlanItemJavaDelegate;
 import org.flowable.cmmn.api.history.HistoricMilestoneInstance;
 import org.flowable.cmmn.api.runtime.CaseInstance;
 import org.flowable.cmmn.api.runtime.PlanItemInstance;
+import org.flowable.cmmn.engine.impl.CmmnManagementServiceImpl;
+import org.flowable.cmmn.engine.impl.util.CommandContextUtil;
 import org.flowable.cmmn.engine.test.CmmnDeployment;
 import org.flowable.cmmn.engine.test.FlowableCmmnTestCase;
 import org.flowable.cmmn.engine.test.impl.CmmnHistoryTestHelper;
@@ -48,6 +52,8 @@ import org.flowable.variable.api.history.HistoricVariableInstance;
 import org.flowable.variable.api.persistence.entity.VariableInstance;
 import org.flowable.variable.api.types.ValueFields;
 import org.flowable.variable.api.types.VariableType;
+import org.flowable.variable.service.VariableServiceConfiguration;
+import org.flowable.variable.service.impl.persistence.entity.VariableInstanceEntity;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -99,6 +105,30 @@ public class VariablesTest extends FlowableCmmnTestCase {
     }
 
     @Test
+    @CmmnDeployment(resources = "org/flowable/cmmn/test/runtime/oneHumanTaskCase.cmmn")
+    public void testGetSpecificVariablesOnly() {
+        CaseInstance caseInstance = cmmnRuntimeService.createCaseInstanceBuilder()
+                .caseDefinitionKey("oneHumanTaskCase")
+                .variable("stringVar", "Hello World")
+                .variable("intVar", 42)
+                .variable("doubleVar", 10.5)
+                .start();
+
+        assertThat(cmmnRuntimeService.getVariables(caseInstance.getId()))
+                .containsOnly(
+                        entry("stringVar", "Hello World"),
+                        entry("intVar", 42),
+                        entry("doubleVar", 10.5)
+                );
+
+        assertThat(cmmnRuntimeService.getVariables(caseInstance.getId(), Arrays.asList("stringVar", "doubleVar", "dummyVar")))
+                .containsOnly(
+                        entry("stringVar", "Hello World"),
+                        entry("doubleVar", 10.5)
+                );
+    }
+
+    @Test
     @CmmnDeployment
     public void testGetLocalVariables() {
         Map<String, Object> variables = new HashMap<>();
@@ -142,6 +172,35 @@ public class VariablesTest extends FlowableCmmnTestCase {
         variableInstance = localVariableInstancesFromGet.get("intVar");
         assertThat(((Integer) variableInstance.getValue()).intValue()).isEqualTo(21);
         assertThat(variableInstance.getTypeName()).isEqualTo("integer");
+    }
+
+    @Test
+    @CmmnDeployment(resources = "org/flowable/cmmn/test/runtime/oneHumanTaskCase.cmmn")
+    public void testGetSpecificLocalVariables() {
+        cmmnRuntimeService.createCaseInstanceBuilder()
+                .caseDefinitionKey("oneHumanTaskCase")
+                .variable("stringVar", "Hello World")
+                .variable("intVar", 42)
+                .variable("doubleVar", 10.5)
+                .start();
+
+        PlanItemInstance planItemInstance = cmmnRuntimeService.createPlanItemInstanceQuery().singleResult();
+        cmmnRuntimeService.setLocalVariable(planItemInstance.getId(), "stringVar", "Changed value");
+        cmmnRuntimeService.setLocalVariable(planItemInstance.getId(), "intVar", 21);
+        cmmnRuntimeService.setLocalVariable(planItemInstance.getId(), "doubleVar", 12.6);
+
+        assertThat(cmmnRuntimeService.getLocalVariables(planItemInstance.getId()))
+                .containsOnly(
+                        entry("stringVar", "Changed value"),
+                        entry("intVar", 21),
+                        entry("doubleVar", 12.6)
+                );
+
+        assertThat(cmmnRuntimeService.getLocalVariables(planItemInstance.getId(), Arrays.asList("stringVar", "doubleVar", "dummyVar")))
+                .containsOnly(
+                        entry("stringVar", "Changed value"),
+                        entry("doubleVar", 12.6)
+                );
     }
 
     @Test
@@ -789,6 +848,44 @@ public class VariablesTest extends FlowableCmmnTestCase {
             assertThat(historyVars.size()).isEqualTo(1);
             assertThat(historyVars).extracting(HistoricVariableInstance::getValue).containsExactlyInAnyOrder("test1");
         }
+    }
+
+    @Test
+    @CmmnDeployment(resources = "org/flowable/cmmn/test/task/CmmnTaskServiceTest.testOneHumanTaskCase.cmmn")
+    public void testUpdateMetaInfo() {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("myVariable", "Hello World");
+        CaseInstance caseInstance = cmmnRuntimeService.createCaseInstanceBuilder().caseDefinitionKey("oneHumanTaskCase").variables(variables).start();
+
+        VariableInstance variableInstance = cmmnRuntimeService.createVariableInstanceQuery().caseInstanceId(caseInstance.getId()).singleResult();
+        assertThat(variableInstance.getMetaInfo()).isNull();
+
+        ((CmmnManagementServiceImpl) cmmnManagementService).executeCommand(commandContext -> {
+            List<VariableInstanceEntity> variablesInstances = CommandContextUtil.getVariableService(commandContext)
+                    .findVariableInstanceByScopeIdAndScopeType(caseInstance.getId(), ScopeTypes.CMMN);
+            assertThat(variablesInstances).extracting(ValueFields::getName).containsExactly("myVariable");
+
+            VariableInstanceEntity variableInstanceEntity = variablesInstances.get(0);
+            variableInstanceEntity.setMetaInfo("test meta info");
+            VariableServiceConfiguration variableServiceConfiguration = cmmnEngineConfiguration.getVariableServiceConfiguration();
+            variableServiceConfiguration.getVariableInstanceEntityManager().update(variableInstanceEntity);
+            if (variableServiceConfiguration.getInternalHistoryVariableManager() != null) {
+                variableServiceConfiguration.getInternalHistoryVariableManager()
+                        .recordVariableUpdate(variableInstanceEntity, commandContext.getClock().getCurrentTime());
+            }
+
+            return null;
+        });
+
+        variableInstance = cmmnRuntimeService.createVariableInstanceQuery().caseInstanceId(caseInstance.getId()).singleResult();
+        assertThat(variableInstance.getMetaInfo()).isEqualTo("test meta info");
+
+        if (CmmnHistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.AUDIT, cmmnEngineConfiguration)) {
+            HistoricVariableInstance historicVariableInstance = cmmnHistoryService.createHistoricVariableInstanceQuery()
+                    .caseInstanceId(caseInstance.getId()).singleResult();
+            assertThat(historicVariableInstance.getMetaInfo()).isEqualTo("test meta info");
+        }
+
     }
 
     protected void addVariableTypeIfNotExists(VariableType variableType) {

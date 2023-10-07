@@ -941,7 +941,7 @@ public class ProcessInstanceMigrationTest extends AbstractProcessInstanceMigrati
                     .list();
             assertThat(historicActivityInstancesAfter).hasSameSizeAs(historicActivityInstancesBefore);
             assertThat(historicActivityInstancesBefore)
-                    .usingElementComparatorIgnoringFields("revision", "processDefinitionId")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("revision", "processDefinitionId")
                     .containsExactlyInAnyOrderElementsOf(historicActivityInstancesAfter);
 
             if (HistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.AUDIT, processEngineConfiguration)) {
@@ -949,7 +949,7 @@ public class ProcessInstanceMigrationTest extends AbstractProcessInstanceMigrati
 
                 assertThat(historicTaskInstancesAfter).hasSameSizeAs(historicTaskInstancesBefore);
                 assertThat(historicTaskInstancesBefore)
-                        .usingElementComparatorIgnoringFields("revision", "processDefinitionId", "originalPersistentState", "lastUpdateTime")
+                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("revision", "processDefinitionId", "originalPersistentState", "lastUpdateTime")
                         .containsExactlyInAnyOrderElementsOf(historicTaskInstancesAfter);
             }
         }
@@ -1038,7 +1038,7 @@ public class ProcessInstanceMigrationTest extends AbstractProcessInstanceMigrati
                     .list();
             assertThat(historicActivityInstancesAfter).hasSameSizeAs(historicActivityInstancesBefore);
             assertThat(historicActivityInstancesBefore)
-                    .usingElementComparatorIgnoringFields("revision", "processDefinitionId", "assignee", "originalPersistentState")
+                    .usingRecursiveFieldByFieldElementComparatorIgnoringFields("revision", "processDefinitionId", "assignee", "originalPersistentState")
                     .containsExactlyInAnyOrderElementsOf(historicActivityInstancesAfter);
 
             if (HistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.AUDIT, processEngineConfiguration)) {
@@ -1046,7 +1046,7 @@ public class ProcessInstanceMigrationTest extends AbstractProcessInstanceMigrati
 
                 assertThat(historicTaskInstancesAfter).hasSameSizeAs(historicTaskInstancesBefore);
                 assertThat(historicTaskInstancesBefore)
-                        .usingElementComparatorIgnoringFields("revision", "processDefinitionId", "assignee", "originalPersistentState", "lastUpdateTime")
+                        .usingRecursiveFieldByFieldElementComparatorIgnoringFields("revision", "processDefinitionId", "assignee", "originalPersistentState", "lastUpdateTime")
                         .containsExactlyInAnyOrderElementsOf(historicTaskInstancesAfter);
             }
         }
@@ -1381,6 +1381,161 @@ public class ProcessInstanceMigrationTest extends AbstractProcessInstanceMigrati
                     "BeforeSubProcess",
                     "InsideSimpleSubProcess1",
                     "AfterSubProcess");
+        }
+
+        assertProcessEnded(processInstance.getId());
+    }
+    
+    @Test
+    public void testSimpleMigrationWithMultiInstanceTask() {
+        ProcessDefinition procDefOneTask = deployProcessDefinition("my deploy",
+                "org/flowable/engine/test/api/runtime/migration/parallel-multi-instance-task.bpmn20.xml");
+        ProcessDefinition procDefTwoTasks = deployProcessDefinition("my deploy",
+                "org/flowable/engine/test/api/runtime/migration/parallel-multi-instance-task-v2.bpmn20.xml");
+
+        // Start an instance of a process with one task inside a subProcess
+        ProcessInstance processInstance = runtimeService.startProcessInstanceById(procDefOneTask.getId(), Collections.singletonMap("nrOfLoops", 2));
+
+        // Confirm and move inside the subProcess
+        List<Execution> executions = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).list();
+        assertThat(executions).hasSize(2); //includes root execution
+        assertThat(executions)
+                .extracting("processDefinitionId")
+                .containsOnly(procDefOneTask.getId());
+
+        // Should be only one task
+        Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
+        assertThat(task).extracting(Task::getTaskDefinitionKey).isEqualTo("beforeMultiInstance");
+        completeTask(task);
+        assertThat(taskService.createTaskQuery().processInstanceId(processInstance.getId()).list()).hasSize(2);
+        
+        executions = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions().list();
+        assertThat(executions)
+        		.hasSize(3)
+        		.extracting(Execution::getActivityId)
+        		.contains("parallelTasks");
+        
+        // Migrate to the other processDefinition
+        ProcessInstanceMigrationBuilder processInstanceMigrationBuilder = processMigrationService.createProcessInstanceMigrationBuilder()
+                .migrateToProcessDefinition(procDefTwoTasks.getId());
+
+        ProcessInstanceMigrationValidationResult processInstanceMigrationResult = processInstanceMigrationBuilder.validateMigration(processInstance.getId());
+        assertThat(processInstanceMigrationResult.isMigrationValid()).isTrue();
+
+        processInstanceMigrationBuilder.migrate(processInstance.getId());
+
+        // Confirm and move inside the subProcess
+        List<Execution> executionsAfterMigration = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions()
+                .list();
+        assertThat(executionsAfterMigration)
+        		.hasSize(3)
+                .extracting(Execution::getActivityId)
+                .contains("parallelTasks");
+        assertThat(executionsAfterMigration)
+                .extracting("processDefinitionId")
+                .containsOnly(procDefTwoTasks.getId());
+        List<Task> tasksAfterMigration = taskService.createTaskQuery().processInstanceId(processInstance.getId()).list();
+        assertThat(tasksAfterMigration)
+			.hasSize(2)
+	        .extracting(Task::getTaskDefinitionKey)
+	        .contains("parallelTasks");
+
+        if (HistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.ACTIVITY, processEngineConfiguration)) {
+            checkActivityInstances(procDefTwoTasks, processInstance, "userTask", "beforeMultiInstance", "parallelTasks", "parallelTasks", "parallelTasks", "parallelTasks");
+
+            checkTaskInstance(procDefTwoTasks, processInstance, "beforeMultiInstance", "parallelTasks", "parallelTasks", "parallelTasks", "parallelTasks");
+        }
+
+        completeProcessInstanceTasks(processInstance.getId());
+
+        if (HistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.ACTIVITY, processEngineConfiguration)) {
+            checkActivityInstances(procDefTwoTasks, processInstance, "userTask", "beforeMultiInstance", "parallelTasks", "parallelTasks", "parallelTasks", "parallelTasks");
+
+            checkTaskInstance(procDefTwoTasks, processInstance, "beforeMultiInstance", "parallelTasks", "parallelTasks", "parallelTasks", "parallelTasks");
+        }
+
+        assertProcessEnded(processInstance.getId());
+    }
+    
+    @Test
+    public void testSimpleMigrationWithMultiInstanceSubProcess() {
+        ProcessDefinition procDefOne = deployProcessDefinition("my deploy",
+                "org/flowable/engine/test/api/runtime/migration/parallel-multi-instance-subprocess.bpmn20.xml");
+        ProcessDefinition procDefTwo = deployProcessDefinition("my deploy",
+                "org/flowable/engine/test/api/runtime/migration/parallel-multi-instance-subprocess-v2.bpmn20.xml");
+
+        // Start an instance of a process with one task inside a subProcess
+        ProcessInstance processInstance = runtimeService.startProcessInstanceById(procDefOne.getId(), Collections.singletonMap("nrOfLoops", 2));
+
+        // Confirm and move inside the subProcess
+        List<Execution> executions = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).list();
+        assertThat(executions).hasSize(2); //includes root execution
+        assertThat(executions)
+                .extracting("processDefinitionId")
+                .containsOnly(procDefOne.getId());
+
+        // Should be only one task
+        Task task = taskService.createTaskQuery().processInstanceId(processInstance.getId()).singleResult();
+        assertThat(task).extracting(Task::getTaskDefinitionKey).isEqualTo("beforeMultiInstance");
+        completeTask(task);
+        List<Task> tasks = taskService.createTaskQuery().processInstanceId(processInstance.getId()).list();
+        assertThat(tasks).hasSize(2);
+        completeTask(tasks.get(0));
+        
+        tasks = taskService.createTaskQuery().processInstanceId(processInstance.getId()).list();
+        assertThat(tasks)
+			.hasSize(2)
+	        .extracting(Task::getTaskDefinitionKey)
+	        .contains("subTask1", "subTask2");
+        
+        executions = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions()
+                .list();
+        assertThat(executions)
+        		.hasSize(5)
+                .extracting(Execution::getActivityId)
+                .containsOnly("parallelMISubProcess", "subTask1", "subTask2");
+        
+        if (HistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.ACTIVITY, processEngineConfiguration)) {
+            checkActivityInstances(procDefOne, processInstance, "userTask", "beforeMultiInstance", "subTask1", "subTask1", "subTask2");
+            
+            checkTaskInstance(procDefOne, processInstance, "beforeMultiInstance", "subTask1", "subTask1", "subTask2");
+        }
+        
+        // Migrate to the other processDefinition
+        ProcessInstanceMigrationBuilder processInstanceMigrationBuilder = processMigrationService.createProcessInstanceMigrationBuilder()
+                .migrateToProcessDefinition(procDefTwo.getId());
+
+        ProcessInstanceMigrationValidationResult processInstanceMigrationResult = processInstanceMigrationBuilder.validateMigration(processInstance.getId());
+        assertThat(processInstanceMigrationResult.isMigrationValid()).isTrue();
+
+        processInstanceMigrationBuilder.migrate(processInstance.getId());
+
+        // Confirm and move inside the subProcess
+        List<Execution> executionsAfterMigration = runtimeService.createExecutionQuery().processInstanceId(processInstance.getId()).onlyChildExecutions()
+                .list();
+        assertThat(executionsAfterMigration)
+        		.hasSize(5)
+                .extracting(Execution::getActivityId)
+                .containsOnly("parallelMISubProcess", "subTask1", "subTask2");
+        assertThat(executionsAfterMigration)
+                .extracting("processDefinitionId")
+                .containsOnly(procDefTwo.getId());
+        assertThat(taskService.createTaskQuery().processInstanceId(processInstance.getId()).list()).hasSize(2);
+        assertThat(taskService.createTaskQuery().processInstanceId(processInstance.getId()).taskDefinitionKey("subTask1").list()).hasSize(1);
+        assertThat(taskService.createTaskQuery().processInstanceId(processInstance.getId()).taskDefinitionKey("subTask2").list()).hasSize(1);
+
+        if (HistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.ACTIVITY, processEngineConfiguration)) {
+            checkActivityInstances(procDefTwo, processInstance, "userTask", "beforeMultiInstance", "subTask1", "subTask1", "subTask2", "subTask1", "subTask2");
+
+            checkTaskInstance(procDefTwo, processInstance, "beforeMultiInstance", "subTask1", "subTask1", "subTask2", "subTask1", "subTask2");
+        }
+
+        completeProcessInstanceTasks(processInstance.getId());
+
+        if (HistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.ACTIVITY, processEngineConfiguration)) {
+            checkActivityInstances(procDefTwo, processInstance, "userTask", "beforeMultiInstance", "subTask1", "subTask1", "subTask2", "subTask1", "subTask2", "subTask2");
+
+            checkTaskInstance(procDefTwo, processInstance, "beforeMultiInstance", "subTask1", "subTask1", "subTask2", "subTask1", "subTask2", "subTask2");
         }
 
         assertProcessEnded(processInstance.getId());

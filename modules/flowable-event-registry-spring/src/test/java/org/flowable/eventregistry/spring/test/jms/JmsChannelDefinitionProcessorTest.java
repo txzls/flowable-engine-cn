@@ -712,7 +712,7 @@ class JmsChannelDefinitionProcessorTest {
 
         Object message = await("receive message")
                 .atMost(Duration.ofSeconds(10))
-                .until(() -> jmsTemplate.receiveAndConvert("test-combination.test-expression-customer"), Objects::nonNull);;
+                .until(() -> jmsTemplate.receiveAndConvert("test-combination.test-expression-customer"), Objects::nonNull);
         assertThat(message).isNotNull();
         assertThatJson(message)
                 .isEqualTo("{"
@@ -827,7 +827,7 @@ class JmsChannelDefinitionProcessorTest {
 
         await("receive dead letter message")
                 .atMost(Duration.ofSeconds(10))
-                .until(() -> jmsTemplate.receiveAndConvert("ActiveMQ.DLQ"), Objects::nonNull);
+                .until(() -> jmsTemplate.receiveAndConvert("DLQ.test-customer"), Objects::nonNull);
 
         assertThat(testEventConsumer.getEvents())
                 .extracting(EventRegistryEvent::getType)

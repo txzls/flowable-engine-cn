@@ -17,7 +17,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.flowable.common.engine.api.FlowableException;
@@ -45,6 +44,10 @@ import io.swagger.annotations.Authorization;
 @Api(tags = { "Executions" }, description = "Manage Executions", authorizations = { @Authorization(value = "basicAuth") })
 public class ExecutionVariableDataResource extends BaseExecutionVariableResource {
 
+    public ExecutionVariableDataResource() {
+        super(RestResponseFactory.VARIABLE_EXECUTION);
+    }
+
     @ApiOperation(value = "Get the binary data for an execution", tags = { "Executions" }, nickname = "getExecutionVariableData")
     @ApiResponses(value = {
             @ApiResponse(code = 200, message = "Indicates the execution was found and the requested variables are returned."),
@@ -54,11 +57,11 @@ public class ExecutionVariableDataResource extends BaseExecutionVariableResource
     @ResponseBody
     public byte[] getVariableData(@ApiParam(name = "executionId") @PathVariable("executionId") String executionId, @ApiParam(name = "variableName") @PathVariable("variableName") String variableName,
             @RequestParam(value = "scope", required = false) String scope,
-            HttpServletRequest request, HttpServletResponse response) {
+            HttpServletResponse response) {
         try {
             byte[] result = null;
 
-            Execution execution = getExecutionFromRequest(executionId);
+            Execution execution = getExecutionFromRequestWithoutAccessCheck(executionId);
             RestVariable variable = getVariableFromRequest(execution, variableName, scope, true);
             if (RestResponseFactory.BYTE_ARRAY_VARIABLE_TYPE.equals(variable.getType())) {
                 result = (byte[]) variable.getValue();

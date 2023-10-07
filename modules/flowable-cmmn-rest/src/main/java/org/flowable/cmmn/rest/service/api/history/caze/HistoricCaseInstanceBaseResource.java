@@ -77,6 +77,9 @@ public class HistoricCaseInstanceBaseResource {
         if (queryRequest.getCaseDefinitionKey() != null) {
             query.caseDefinitionKey(queryRequest.getCaseDefinitionKey());
         }
+        if (queryRequest.getCaseDefinitionKeys() != null && !queryRequest.getCaseDefinitionKeys().isEmpty()) {
+            query.caseDefinitionKeys(queryRequest.getCaseDefinitionKeys());
+        }
         if (queryRequest.getCaseDefinitionId() != null) {
             query.caseDefinitionId(queryRequest.getCaseDefinitionId());
         }
@@ -218,15 +221,21 @@ public class HistoricCaseInstanceBaseResource {
     }
     
     protected HistoricCaseInstance getHistoricCaseInstanceFromRequest(String caseInstanceId) {
-        HistoricCaseInstance caseInstance = historyService.createHistoricCaseInstanceQuery().caseInstanceId(caseInstanceId).singleResult();
-        if (caseInstance == null) {
-            throw new FlowableObjectNotFoundException("Could not find a case instance with id '" + caseInstanceId + "'.", HistoricCaseInstance.class);
-        }
-        
+        HistoricCaseInstance caseInstance = getHistoricCaseInstanceFromRequestWithoutAccessCheck(caseInstanceId);
+
         if (restApiInterceptor != null) {
             restApiInterceptor.accessHistoryCaseInfoById(caseInstance);
         }
         
+        return caseInstance;
+    }
+
+    protected HistoricCaseInstance getHistoricCaseInstanceFromRequestWithoutAccessCheck(String caseInstanceId) {
+        HistoricCaseInstance caseInstance = historyService.createHistoricCaseInstanceQuery().caseInstanceId(caseInstanceId).singleResult();
+        if (caseInstance == null) {
+            throw new FlowableObjectNotFoundException("Could not find a case instance with id '" + caseInstanceId + "'.", HistoricCaseInstance.class);
+        }
+
         return caseInstance;
     }
 

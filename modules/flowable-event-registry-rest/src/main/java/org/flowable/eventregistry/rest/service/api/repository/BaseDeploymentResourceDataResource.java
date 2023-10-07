@@ -19,7 +19,6 @@ import java.util.List;
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.apache.commons.io.IOUtils;
-import org.apache.http.entity.ContentType;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.FlowableIllegalArgumentException;
 import org.flowable.common.engine.api.FlowableObjectNotFoundException;
@@ -65,18 +64,12 @@ public class BaseDeploymentResourceDataResource {
         List<String> resourceList = repositoryService.getDeploymentResourceNames(deploymentId);
 
         if (resourceList.contains(resourceName)) {
-            final InputStream resourceStream = repositoryService.getResourceAsStream(deploymentId, resourceName);
-
-            String contentType = null;
-            if (resourceName.toLowerCase().endsWith(".event") || resourceName.toLowerCase().endsWith(".channel")) {
-                contentType = ContentType.APPLICATION_JSON.getMimeType();
-            } else {
-                contentType = contentTypeResolver.resolveContentType(resourceName);
-            }
+            String contentType = contentTypeResolver.resolveContentType(resourceName);
             response.setContentType(contentType);
             
-            try {
+            try (final InputStream resourceStream = repositoryService.getResourceAsStream(deploymentId, resourceName)) {
                 return IOUtils.toByteArray(resourceStream);
+                
             } catch (Exception e) {
                 throw new FlowableException("Error converting resource stream", e);
             }

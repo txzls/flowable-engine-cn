@@ -16,9 +16,6 @@ package org.flowable.cmmn.rest.service.api.runtime.caze;
 import java.util.HashMap;
 import java.util.Map;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.flowable.cmmn.api.CmmnHistoryService;
 import org.flowable.cmmn.api.repository.CaseDefinition;
 import org.flowable.cmmn.api.runtime.CaseInstance;
@@ -73,7 +70,7 @@ public class CaseInstanceCollectionResource extends BaseCaseInstanceResource {
             @ApiImplicitParam(name = "nameLikeIgnoreCase", dataType = "string", value = "Only return case instances like the given name ignoring case.", paramType = "query"),
             @ApiImplicitParam(name = "businessKey", dataType = "string", value = "Only return case instances with the given business key.", paramType = "query"),
             @ApiImplicitParam(name = "businessStatus", dataType = "string", value = "Only return case instances with the given business status.", paramType = "query"),
-            @ApiImplicitParam(name = "parentId", dataType = "string", value = "Only return case instances with the given parent id.", paramType = "query"),
+            @ApiImplicitParam(name = "caseInstanceParentId", dataType = "string", value = "Only return case instances with the given parent id.", paramType = "query"),
             @ApiImplicitParam(name = "startedBy", dataType = "string", value = "Only return case instances started by the given user.", paramType = "query"),
             @ApiImplicitParam(name = "startedBefore", dataType = "string", format = "date-time", value = "Only return case instances started before the given date.", paramType = "query"),
             @ApiImplicitParam(name = "startedAfter", dataType = "string", format = "date-time", value = "Only return case instances started after the given date.", paramType = "query"),
@@ -97,7 +94,7 @@ public class CaseInstanceCollectionResource extends BaseCaseInstanceResource {
             @ApiResponse(code = 400, message = "Indicates a parameter was passed in the wrong format . The status message contains additional information.")
     })
     @GetMapping(value = "/cmmn-runtime/case-instances", produces = "application/json")
-    public DataResponse<CaseInstanceResponse> getCaseInstances(@ApiParam(hidden = true) @RequestParam Map<String, String> allRequestParams, HttpServletRequest request) {
+    public DataResponse<CaseInstanceResponse> getCaseInstances(@ApiParam(hidden = true) @RequestParam Map<String, String> allRequestParams) {
         // Populate query based on request
         CaseInstanceQueryRequest queryRequest = new CaseInstanceQueryRequest();
 
@@ -206,7 +203,7 @@ public class CaseInstanceCollectionResource extends BaseCaseInstanceResource {
         }
 
         if (allRequestParams.containsKey("withoutTenantId")) {
-            if (Boolean.valueOf(allRequestParams.get("withoutTenantId"))) {
+            if (Boolean.parseBoolean(allRequestParams.get("withoutTenantId"))) {
                 queryRequest.setWithoutTenantId(Boolean.TRUE);
             }
         }
@@ -219,13 +216,15 @@ public class CaseInstanceCollectionResource extends BaseCaseInstanceResource {
             + "Only one of *caseDefinitionId* or *caseDefinitionKey* an be used in the request body. \n\n"
             + "Parameters *businessKey*, *variables* and *tenantId* are optional.\n\n "
             + "If tenantId is omitted, the default tenant will be used. More information about the variable format can be found in the REST variables section.\n\n "
-            + "Note that the variable-scope that is supplied is ignored, process-variables are always local.\n\n")
+            + "Note that the variable-scope that is supplied is ignored, process-variables are always local.\n\n",
+            code = 201)
     @ApiResponses(value = {
             @ApiResponse(code = 201, message = "Indicates the case instance was created."),
             @ApiResponse(code = 400, message = "Indicates either the case definition was not found (based on id or key), no process is started by sending the given message or an invalid variable has been passed. Status description contains additional information about the error.")
     })
     @PostMapping(value = "/cmmn-runtime/case-instances", produces = "application/json")
-    public CaseInstanceResponse createCaseInstance(@RequestBody CaseInstanceCreateRequest request, HttpServletRequest httpRequest, HttpServletResponse response) {
+    @ResponseStatus(HttpStatus.CREATED)
+    public CaseInstanceResponse createCaseInstance(@RequestBody CaseInstanceCreateRequest request) {
 
         if (request.getCaseDefinitionId() == null && request.getCaseDefinitionKey() == null) {
             throw new FlowableIllegalArgumentException("Either caseDefinitionId or caseDefinitionKey is required.");
@@ -298,7 +297,7 @@ public class CaseInstanceCollectionResource extends BaseCaseInstanceResource {
             if (request.isTenantSet()) {
                 caseInstanceBuilder.tenantId(request.getTenantId());
             }
-            if (request.getOverrideDefinitionTenantId() != null && request.getOverrideDefinitionTenantId().length() > 0) {
+            if (request.getOverrideDefinitionTenantId() != null && !request.getOverrideDefinitionTenantId().isEmpty()) {
                 caseInstanceBuilder.overrideCaseDefinitionTenantId(request.getOverrideDefinitionTenantId());
             }
             if (startVariables != null) {
@@ -319,8 +318,6 @@ public class CaseInstanceCollectionResource extends BaseCaseInstanceResource {
             }
 
             instance = caseInstanceBuilder.start();
-
-            response.setStatus(HttpStatus.CREATED.value());
 
             CaseInstanceResponse caseInstanceResponse = null;
             if (request.getReturnVariables()) {
@@ -344,7 +341,7 @@ public class CaseInstanceCollectionResource extends BaseCaseInstanceResource {
         }
     }
 
-    @ApiOperation(value = "Post action request to delete/terminate a bulk of case instances", tags = { "Case Instances" }, nickname = "bulkDeleteCaseInstances")
+    @ApiOperation(value = "Post action request to delete/terminate a bulk of case instances", tags = { "Case Instances" }, nickname = "bulkDeleteCaseInstances", code = 204)
     @ApiResponses(value = {
             @ApiResponse(code = 204, message = "Indicates the bulk of case instances was found and deleted. Response body is left empty intentionally."),
             @ApiResponse(code = 404, message = "Indicates at least one requested case instance was not found.")

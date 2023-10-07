@@ -109,8 +109,9 @@ public class CaseTaskActivityBehavior extends ChildTaskActivityBehavior implemen
                     throw new FlowableIllegalStateException("Form engine is not initialized");
                 }
 
-                variablesFromFormSubmission = formService
-                        .getVariablesFromFormSubmission(variableInfo.formInfo, variableInfo.formVariables, variableInfo.formOutcome);
+                variablesFromFormSubmission = formService.getVariablesFromFormSubmission(planItemInstanceEntity.getPlanItemDefinitionId(), "caseTask", 
+                        planItemInstanceEntity.getCaseInstanceId(), planItemInstanceEntity.getCaseDefinitionId(), ScopeTypes.CMMN, 
+                        variableInfo.formInfo, variableInfo.formVariables, variableInfo.formOutcome);
 
                 finalVariableMap.putAll(variablesFromFormSubmission);
             }
@@ -279,7 +280,7 @@ public class CaseTaskActivityBehavior extends ChildTaskActivityBehavior implemen
                 variableValue = cmmnRuntimeService.getVariable(planItemInstance.getReferenceId(), outParameter.getSource());
 
             }
-            caseInstance.setVariable(variableName, variableValue);
+            planItemInstance.setVariable(variableName, variableValue);
         }
     }
 

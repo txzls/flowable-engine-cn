@@ -23,38 +23,37 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 
+import org.assertj.core.groups.Tuple;
+import org.flowable.common.engine.impl.history.HistoryLevel;
 import org.flowable.engine.delegate.DelegateExecution;
 import org.flowable.engine.delegate.JavaDelegate;
+import org.flowable.engine.impl.test.HistoryTestHelper;
 import org.flowable.engine.impl.test.PluggableFlowableTestCase;
-import org.flowable.engine.repository.Deployment;
+import org.flowable.engine.impl.util.CommandContextUtil;
 import org.flowable.engine.runtime.ProcessInstance;
+import org.flowable.engine.test.Deployment;
 import org.flowable.task.api.Task;
+import org.flowable.variable.api.history.HistoricVariableInstance;
+import org.flowable.variable.api.persistence.entity.VariableInstance;
+import org.flowable.variable.api.types.ValueFields;
+import org.flowable.variable.service.VariableService;
+import org.flowable.variable.service.VariableServiceConfiguration;
+import org.flowable.variable.service.impl.persistence.entity.HistoricVariableInstanceEntity;
+import org.flowable.variable.service.impl.persistence.entity.VariableInstanceEntity;
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Testing various constructs with variables. Created to test the changes done in https://jira.codehaus.org/browse/ACT-1900.
+ * Testing various constructs with variables.
  *
  * @author Joram Barrez
  */
 public class VariablesTest extends PluggableFlowableTestCase {
-
-    protected String processInstanceId;
-
-    @BeforeEach
-    protected void setUp() throws Exception {
-
-        repositoryService.createDeployment().addClasspathResource("org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml").deploy();
-
-        // Creating 50 vars in total
-        Map<String, Object> vars = generateVariables();
-        processInstanceId = runtimeService.startProcessInstanceByKey("variablesTest", vars).getId();
-    }
 
     private Map<String, Object> generateVariables() {
         Map<String, Object> vars = new HashMap<>();
@@ -96,20 +95,16 @@ public class VariablesTest extends PluggableFlowableTestCase {
         return vars;
     }
 
-    @AfterEach
-    protected void tearDown() throws Exception {
-
-        for (Deployment deployment : repositoryService.createDeploymentQuery().list()) {
-            repositoryService.deleteDeployment(deployment.getId(), true);
-        }
-
-    }
-
     @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml")
     public void testGetVariables() {
 
+        // Creating 50 vars in total
+        Map<String, Object> vars = generateVariables();
+        String processInstanceId = runtimeService.startProcessInstanceByKey("variablesTest", vars).getId();
+
         // Regular getVariables after process instance start
-        Map<String, Object> vars = runtimeService.getVariables(processInstanceId);
+        vars = runtimeService.getVariables(processInstanceId);
         assertThat(vars).hasSize(70);
         int nrOfStrings = 0;
         int nrOfInts = 0;
@@ -191,10 +186,14 @@ public class VariablesTest extends PluggableFlowableTestCase {
     }
 
     @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml")
     public void testGetVariablesLocal() {
+        // Creating 50 vars in total
+        Map<String, Object> vars = generateVariables();
+        String processInstanceId = runtimeService.startProcessInstanceByKey("variablesTest", vars).getId();
 
         // Regular getVariables after process instance start
-        Map<String, Object> vars = runtimeService.getVariablesLocal(processInstanceId);
+        vars = runtimeService.getVariablesLocal(processInstanceId);
         assertThat(vars).hasSize(70);
         int nrOfStrings = 0;
         int nrOfInts = 0;
@@ -244,7 +243,11 @@ public class VariablesTest extends PluggableFlowableTestCase {
     }
 
     @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml")
     public void testGetVariable() {
+        // Creating 50 vars in total
+        Map<String, Object> vars = generateVariables();
+        String processInstanceId = runtimeService.startProcessInstanceByKey("variablesTest", vars).getId();
 
         // This actually does a specific select. Before, this was not the case
         // (all variables were fetched)
@@ -255,7 +258,11 @@ public class VariablesTest extends PluggableFlowableTestCase {
     }
 
     @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml")
     public void testGetVariablesLocal2() {
+        // Creating 50 vars in total
+        Map<String, Object> vars = generateVariables();
+        String processInstanceId = runtimeService.startProcessInstanceByKey("variablesTest", vars).getId();
 
         // Trying the same after moving the process
         Task task = taskService.createTaskQuery().singleResult();
@@ -269,7 +276,7 @@ public class VariablesTest extends PluggableFlowableTestCase {
         runtimeService.setVariableLocal(executionId, "stringVar2", "world");
         runtimeService.setVariableLocal(executionId, "myVar", "test123");
 
-        Map<String, Object> vars = runtimeService.getVariables(processInstanceId);
+        vars = runtimeService.getVariables(processInstanceId);
         assertThat(vars).hasSize(70);
         int nrOfStrings = 0;
         int nrOfInts = 0;
@@ -359,9 +366,13 @@ public class VariablesTest extends PluggableFlowableTestCase {
     }
 
     @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml")
     public void testGetVariablesWithCollectionThroughRuntimeService() {
+        // Creating 50 vars in total
+        Map<String, Object> vars = generateVariables();
+        String processInstanceId = runtimeService.startProcessInstanceByKey("variablesTest", vars).getId();
 
-        Map<String, Object> vars = runtimeService.getVariables(processInstanceId, Arrays.asList("intVar1", "intVar3", "intVar5", "intVar9"));
+        vars = runtimeService.getVariables(processInstanceId, Arrays.asList("intVar1", "intVar3", "intVar5", "intVar9"));
         assertThat(vars)
                 .containsOnly(
                         entry("intVar1", 100),
@@ -465,10 +476,14 @@ public class VariablesTest extends PluggableFlowableTestCase {
     }
 
     @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml")
     public void testTaskGetVariables() {
+        // Creating 50 vars in total
+        Map<String, Object> vars = generateVariables();
+        String processInstanceId = runtimeService.startProcessInstanceByKey("variablesTest", vars).getId();
 
         org.flowable.task.api.Task task = taskService.createTaskQuery().taskName("Task 1").singleResult();
-        Map<String, Object> vars = taskService.getVariables(task.getId());
+        vars = taskService.getVariables(task.getId());
         assertThat(vars).hasSize(70);
         int nrOfStrings = 0;
         int nrOfInts = 0;
@@ -537,7 +552,11 @@ public class VariablesTest extends PluggableFlowableTestCase {
     }
 
     @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml")
     public void testLocalDateVariable() {
+        // Creating 50 vars in total
+        Map<String, Object> vars = generateVariables();
+        String processInstanceId = runtimeService.startProcessInstanceByKey("variablesTest", vars).getId();
 
         Calendar todayCal = new GregorianCalendar();
         int todayYear = todayCal.get(Calendar.YEAR);
@@ -572,7 +591,11 @@ public class VariablesTest extends PluggableFlowableTestCase {
     }
 
     @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml")
     public void testLocalDateTimeVariable() {
+        // Creating 50 vars in total
+        Map<String, Object> vars = generateVariables();
+        String processInstanceId = runtimeService.startProcessInstanceByKey("variablesTest", vars).getId();
 
         Calendar todayCal = new GregorianCalendar();
         int todayYear = todayCal.get(Calendar.YEAR);
@@ -606,6 +629,108 @@ public class VariablesTest extends PluggableFlowableTestCase {
         processInstance = runtimeService.createProcessInstanceQuery().variableValueGreaterThanOrEqual("datetimeVar1", queryDate).singleResult();
         assertThat(processInstance).isNotNull();
         assertThat(processInstance.getId()).isEqualTo(processInstanceId);
+    }
+
+    @Test
+    @Deployment(resources = "org/flowable/engine/test/api/variables/VariablesTest.bpmn20.xml")
+    public void testUpdateMetaInfo() {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("myVariable", "Hello World");
+        ProcessInstance processInstance = runtimeService.startProcessInstanceByKey("variablesTest", variables);
+
+        VariableInstance variableInstance = runtimeService.createVariableInstanceQuery().processInstanceId(processInstance.getId()).singleResult();
+        assertThat(variableInstance.getMetaInfo()).isNull();
+
+        managementService.executeCommand(commandContext -> {
+            List<VariableInstanceEntity> variablesInstances = CommandContextUtil.getVariableService(commandContext)
+                    .findVariableInstancesByExecutionId(processInstance.getId());
+            assertThat(variablesInstances).extracting(ValueFields::getName).containsExactly("myVariable");
+
+            VariableInstanceEntity variableInstanceEntity = variablesInstances.get(0);
+            variableInstanceEntity.setMetaInfo("test meta info");
+            VariableServiceConfiguration variableServiceConfiguration = processEngineConfiguration.getVariableServiceConfiguration();
+            variableServiceConfiguration.getVariableInstanceEntityManager().update(variableInstanceEntity);
+            if (variableServiceConfiguration.getInternalHistoryVariableManager() != null) {
+                variableServiceConfiguration.getInternalHistoryVariableManager()
+                        .recordVariableUpdate(variableInstanceEntity, commandContext.getClock().getCurrentTime());
+            }
+            return null;
+        });
+
+        variableInstance = runtimeService.createVariableInstanceQuery().processInstanceId(processInstance.getId()).singleResult();
+        assertThat(variableInstance.getMetaInfo()).isEqualTo("test meta info");
+
+        if (HistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.ACTIVITY, processEngineConfiguration)) {
+            HistoricVariableInstance historicVariableInstance = historyService.createHistoricVariableInstanceQuery()
+                    .processInstanceId(processInstance.getId()).singleResult();
+            assertThat(historicVariableInstance.getMetaInfo()).isEqualTo("test meta info");
+        }
+    }
+
+    @Test
+    public void testCreateAndUpdateWithValue() {
+        List<Object> toDelete = new LinkedList<>();
+        try {
+            managementService.executeCommand(commandContext -> {
+
+                VariableServiceConfiguration variableServiceConfiguration = CommandContextUtil.getProcessEngineConfiguration(commandContext)
+                        .getVariableServiceConfiguration();
+                VariableService variableService = variableServiceConfiguration.getVariableService();
+                VariableInstanceEntity variableInstanceEntity = variableService
+                        .createVariableInstance("myVariable");
+                variableInstanceEntity.setScopeId("testScopeId");
+                variableInstanceEntity.setScopeType("testScopeType");
+                variableService.insertVariableInstanceWithValue(variableInstanceEntity, "myStringValue", "myTenantId");
+                if (variableServiceConfiguration.getInternalHistoryVariableManager() != null) {
+                    variableServiceConfiguration.getInternalHistoryVariableManager()
+                            .recordVariableCreate(variableInstanceEntity, commandContext.getClock().getCurrentTime());
+                }
+                return null;
+            });
+
+            managementService.executeCommand(commandContext -> {
+                List<VariableInstanceEntity> variablesInstances = CommandContextUtil.getVariableService(commandContext)
+                        .findVariableInstanceByScopeIdAndScopeType("testScopeId", "testScopeType");
+                assertThat(variablesInstances).extracting(ValueFields::getName, ValueFields::getTextValue, VariableInstanceEntity::getTypeName)
+                        .containsExactly(Tuple.tuple("myVariable", "myStringValue", "string"));
+
+                VariableInstanceEntity variableInstanceEntity = variablesInstances.get(0);
+                VariableServiceConfiguration variableServiceConfiguration = CommandContextUtil.getProcessEngineConfiguration(commandContext)
+                        .getVariableServiceConfiguration();
+                variableServiceConfiguration.getVariableInstanceValueModifier().updateVariableValue(variableInstanceEntity, 42, "myTenantId");
+                variableServiceConfiguration.getVariableInstanceEntityManager().update(variableInstanceEntity);
+                if (variableServiceConfiguration.getInternalHistoryVariableManager() != null) {
+                    variableServiceConfiguration.getInternalHistoryVariableManager()
+                            .recordVariableUpdate(variableInstanceEntity, commandContext.getClock().getCurrentTime());
+                }
+
+                return null;
+            });
+
+            VariableInstance variableInstance = runtimeService.createVariableInstanceQuery().variableName("myVariable").singleResult();
+            assertThat(variableInstance.getValue()).isEqualTo(42);
+            assertThat(variableInstance.getTypeName()).isEqualTo("integer");
+            toDelete.add(variableInstance);
+            HistoricVariableInstance historicVariableInstance;
+            if (HistoryTestHelper.isHistoryLevelAtLeast(HistoryLevel.ACTIVITY, processEngineConfiguration)) {
+                historicVariableInstance = historyService.createHistoricVariableInstanceQuery()
+                        .variableName("myVariable").singleResult();
+                assertThat(historicVariableInstance.getValue()).isEqualTo(42);
+                toDelete.add(historicVariableInstance);
+            }
+        } finally {
+            managementService.executeCommand(commandContext -> {
+                toDelete.forEach(var -> {
+                    if (var instanceof VariableInstanceEntity) {
+                        CommandContextUtil.getVariableService(commandContext).deleteVariableInstance((VariableInstanceEntity) var);
+                    }
+                    if (var instanceof HistoricVariableInstance) {
+                        CommandContextUtil.getHistoricVariableService(commandContext).deleteHistoricVariableInstance((HistoricVariableInstanceEntity) var);
+                    }
+                });
+                return null;
+            });
+        }
     }
 
     // Class to test variable serialization

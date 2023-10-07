@@ -473,11 +473,6 @@ public class HistoricProcessInstanceQueryImpl extends AbstractVariableQueryImpl<
     }
 
     @Override
-    public HistoricProcessInstanceQuery limitProcessInstanceVariables(Integer processInstanceVariablesLimit) {
-        return this;
-    }
-
-    @Override
     public HistoricProcessInstanceQuery withJobException() {
         if (inOrStatement) {
             this.currentOrQueryObject.withJobException = true;
@@ -1036,6 +1031,7 @@ public class HistoricProcessInstanceQueryImpl extends AbstractVariableQueryImpl<
     }
 
     @Override
+    @Deprecated
     public void deleteWithRelatedData() {
         if (commandExecutor != null) {
             CommandConfig config = new CommandConfig().transactionRequiresNew();

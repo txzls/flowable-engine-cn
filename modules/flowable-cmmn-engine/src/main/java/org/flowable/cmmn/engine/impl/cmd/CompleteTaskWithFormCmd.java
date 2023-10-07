@@ -25,6 +25,7 @@ import org.flowable.cmmn.engine.impl.util.CommandContextUtil;
 import org.flowable.cmmn.model.HumanTask;
 import org.flowable.common.engine.api.FlowableException;
 import org.flowable.common.engine.api.FlowableIllegalArgumentException;
+import org.flowable.common.engine.api.scope.ScopeTypes;
 import org.flowable.common.engine.impl.interceptor.CommandContext;
 import org.flowable.form.api.FormFieldHandler;
 import org.flowable.form.api.FormInfo;
@@ -35,6 +36,7 @@ import org.flowable.task.service.impl.persistence.entity.TaskEntity;
 
 /**
  * @author Tijs Rademakers
+ * @author Joram Barrez
  */
 public class CompleteTaskWithFormCmd extends NeedsActiveTaskCmd<Void> {
 
@@ -42,7 +44,9 @@ public class CompleteTaskWithFormCmd extends NeedsActiveTaskCmd<Void> {
     protected String formDefinitionId;
     protected String outcome;
     protected Map<String, Object> variables;
+    protected Map<String, Object> variablesLocal;
     protected Map<String, Object> transientVariables;
+    protected Map<String, Object> transientVariablesLocal;
     protected boolean localScope;
 
     public CompleteTaskWithFormCmd(String taskId, String formDefinitionId, String outcome, Map<String, Object> variables) {
@@ -66,6 +70,13 @@ public class CompleteTaskWithFormCmd extends NeedsActiveTaskCmd<Void> {
         this.transientVariables = transientVariables;
     }
 
+    public CompleteTaskWithFormCmd(String taskId, String formDefinitionId, String outcome, Map<String,
+            Object> variables, Map<String, Object> variablesLocal, Map<String, Object> transientVariables, Map<String, Object> transientVariablesLocal) {
+        this(taskId, formDefinitionId, outcome, variables, transientVariables);
+        this.variablesLocal = variablesLocal;
+        this.transientVariablesLocal = transientVariablesLocal;
+    }
+
     @Override
     protected Void execute(CommandContext commandContext, TaskEntity task) {
         if (StringUtils.isNotEmpty(task.getProcessInstanceId())) {
@@ -85,10 +96,12 @@ public class CompleteTaskWithFormCmd extends NeedsActiveTaskCmd<Void> {
             // validate input at first
             FormFieldHandler formFieldHandler = cmmnEngineConfiguration.getFormFieldHandler();
             if (isFormFieldValidationEnabled(task)) {
-                formService.validateFormFields(formInfo, variables);
+                formService.validateFormFields(task.getTaskDefinitionKey(), "humanTask", task.getScopeId(), 
+                        task.getScopeDefinitionId(), ScopeTypes.CMMN, formInfo, variables);
             }
             // Extract raw variables and complete the task
-            Map<String, Object> taskVariables = formService.getVariablesFromFormSubmission(formInfo, variables, outcome);
+            Map<String, Object> taskVariables = formService.getVariablesFromFormSubmission(task.getTaskDefinitionKey(), "humanTask", task.getScopeId(), 
+                    task.getScopeDefinitionId(), ScopeTypes.CMMN, formInfo, variables, outcome);
 
             // The taskVariables are the variables that should be used when completing the task
             // the actual variables should instead be used when saving the form instances
@@ -132,21 +145,29 @@ public class CompleteTaskWithFormCmd extends NeedsActiveTaskCmd<Void> {
         if (planItemInstanceEntity == null) {
             throw new FlowableException("Could not find plan item instance for task " + taskId);
         }
-        
+
         if (taskVariables != null) {
-            if (localScope) {
+            if (localScope) { // backwards compatibility from before variableLocal was available in constructor
                 task.setVariablesLocal(taskVariables);
             } else {
                 task.setVariables(taskVariables);
             }
         }
-        
+
+        if (variablesLocal != null) {
+            task.setVariablesLocal(variablesLocal);
+        }
+
         if (transientVariables != null) {
-            if (localScope) {
+            if (localScope) { // backwards compatibility from before variableLocal was available in constructor
                 task.setTransientVariablesLocal(transientVariables);
             } else {
                 task.setTransientVariables(transientVariables);
             }
+        }
+
+        if (transientVariablesLocal != null) {
+            task.setTransientVariablesLocal(transientVariablesLocal);
         }
 
         logUserTaskCompleted(task, cmmnEngineConfiguration);
