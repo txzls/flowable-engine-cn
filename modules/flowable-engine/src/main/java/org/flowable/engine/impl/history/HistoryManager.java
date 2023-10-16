@@ -116,7 +116,7 @@ public interface HistoryManager {
     /**
      * Record task as ended, if audit history is enabled.
      */
-    void recordTaskEnd(TaskEntity task, ExecutionEntity execution, String deleteReason, Date endTime);
+    void recordTaskEnd(TaskEntity task, ExecutionEntity execution, String userId, String deleteReason, Date endTime);
 
     /**
      * Record task name change, if audit history is enabled.
